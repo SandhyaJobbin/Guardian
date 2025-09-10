@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<title>Страж Отзывов – Российское Издание</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root{
+    --brand1:#3b82f6;
+    --brand2:#22d3ee;
+    --accent:#ff7e5f;
+    --bg1:#0f172a;
+    --bg2:#1e293b;
+    --card:#0b1222bb;
+    --ok:#10b981;
+    --bad:#ef4444;
+    --text:#e5e7eb;
+    --muted:#9ca3af;
+    --active:#fff;
+    --active-bg:#3b82f6;
+    --locked:#4b5563;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    color:var(--text);
+    background:
+      radial-gradient(1200px 600px at -10% -10%, rgba(34,211,238,0.12), transparent 60%),
+      radial-gradient(1000px 800px at 110% 10%, rgba(59,130,246,0.12), transparent 60%),
+      linear-gradient(160deg, #0b1020 0%, #111827 60%, #0b1222 100%);
+    min-height:100vh;
+  }
+
+  /* Page Management */
+  .page {
+    display: none;
+  }
+  .page.active {
+    display: block;
+  }
+
+  /* Main Menu Styles */
+  .main-menu {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .game-title {
+    font-size: 3rem;
+    font-weight: 900;
+    background: linear-gradient(90deg, var(--brand1), var(--brand2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 10px;
+    text-shadow: 0 4px 12px rgba(59,130,246,0.3);
+  }
+
+  .game-subtitle {
+    font-size: 1.2rem;
+    color: var(--muted);
+    margin-bottom: 40px;
+    font-weight: 500;
+  }
+
+  .progress-bar {
+    width: 100%;
+    max-width: 600px;
+    height: 8px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    margin-bottom: 30px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--brand1), var(--brand2));
+    border-radius: 10px;
+    transition: width 0.5s ease;
+    width: 0%;
+  }
+
+  .cities-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 20px;
+    max-width: 800px;
+    width: 100%;
+    margin-bottom: 30px;
+  }
+
+  .city-card {
+    background: linear-gradient(180deg, rgba(16,24,40,0.7), rgba(9,13,24,0.65));
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 20px;
+    padding: 25px 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    min-height: 180px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .city-card.unlocked:hover {
+    transform: translateY(-5px);
+    border-color: rgba(59,130,246,0.3);
+    box-shadow: 0 15px 40px rgba(59,130,246,0.15);
+  }
+
+  .city-card.locked {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background: linear-gradient(180deg, rgba(8,12,20,0.7), rgba(4,6,12,0.65));
+  }
+
+  .city-card.completed {
+    border-color: rgba(16,185,129,0.4);
+    background: linear-gradient(180deg, rgba(16,24,40,0.7), rgba(5,15,10,0.65));
+  }
+
+  .city-icon {
+    font-size: 3.5rem;
+    width: 80px;
+    height: 80px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--brand1), var(--brand2));
+    margin-bottom: 5px;
+    animation: float 3s ease-in-out infinite;
+    position: relative;
+  }
+
+  .city-card.locked .city-icon {
+    background: linear-gradient(135deg, var(--locked), #374151);
+    animation: none;
+  }
+
+  .city-card.completed .city-icon {
+    background: linear-gradient(135deg, var(--ok), #059669);
+  }
+
+  .city-card:nth-child(1) .city-icon { animation-delay: -0.2s; }
+  .city-card:nth-child(2) .city-icon { animation-delay: -0.4s; }
+  .city-card:nth-child(3) .city-icon { animation-delay: -0.6s; }
+  .city-card:nth-child(4) .city-icon { animation-delay: -0.8s; }
+  .city-card:nth-child(5) .city-icon { animation-delay: -1.0s; }
+
+  .lock-overlay {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 1.5rem;
+    color: var(--locked);
+  }
+
+  .completion-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 1.5rem;
+    color: var(--ok);
+  }
+
+  .city-name {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: 0.5px;
+  }
+
+  .city-card.locked .city-name {
+    color: var(--locked);
+  }
+
+  .city-difficulty {
+    font-size: 0.9rem;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .city-card.locked .city-difficulty {
+    color: var(--locked);
+  }
+
+  .menu-buttons {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  /* Button Styles */
+  button {
+    border: none;
+    cursor: pointer;
+    border-radius: 12px;
+    padding: 15px 25px;
+    font-weight: 700;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    color: #0a1020;
+  }
+
+  .btn-primary {
+    background: linear-gradient(90deg, var(--brand2), var(--brand1));
+    color: #0b1020;
+  }
+
+  .btn-secondary {
+    background: linear-gradient(90deg, #fbbf24, #f59e0b);
+    color: #0b1020;
+  }
+
+  .btn-start {
+    background: linear-gradient(90deg, #22d3ee, #3b82f6);
+    color: #0b1020;
+  }
+
+  .btn-retain {
+    background: linear-gradient(90deg, #34d399, #10b981);
+  }
+
+  .btn-remove {
+    background: linear-gradient(90deg, #fb7185, #ef4444);
+  }
+
+  .btn-next {
+    background: linear-gradient(90deg, #fde68a, #fbbf24);
+  }
+
+  button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+  }
+
+  button:active {
+    transform: translateY(1px);
+  }
+
+  .disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    filter: grayscale(0.2);
+  }
+
+  /* Game Page Styles */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    backdrop-filter: blur(6px);
+    background: linear-gradient(90deg, rgba(34,211,238,0.08), rgba(59,130,246,0.08));
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+
+  .brand .title {
+    font-size: 1.1rem;
+  }
+
+  .tag {
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .city-checkpoints {
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+  }
+
+  .city-checkpoints .active {
+    font-weight: bold;
+    color: var(--active);
+    background: linear-gradient(90deg, var(--brand1), var(--brand2));
+    border-radius: 6px;
+    padding: 2px 8px;
+    box-shadow: 0 2px 8px rgba(59,130,246,0.12);
+    letter-spacing: 0.5px;
+  }
+
+  .city-checkpoints .completed {
+    color: var(--ok);
+    background: linear-gradient(90deg, var(--ok), #059669);
+    border-radius: 6px;
+    padding: 2px 8px;
+  }
+
+  .city-checkpoints .arrow {
+    color: var(--muted);
+    font-weight: normal;
+    padding: 0 2px;
+  }
+
+  .container {
+    max-width: 980px;
+    margin: 20px auto;
+    padding: 0 16px;
+  }
+
+  .game {
+    background: linear-gradient(180deg, rgba(16,24,40,0.7), rgba(9,13,24,0.65));
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+  }
+
+  .hud {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 10px;
+    align-items: center;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: linear-gradient(90deg, rgba(34,211,238,0.06), rgba(59,130,246,0.06));
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .city {
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #c7d2fe;
+  }
+
+  .stats {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    justify-content: flex-end;
+    font-size: 0.95rem;
+  }
+
+  .stat {
+    color: var(--muted);
+  }
+
+  .stat b {
+    color: var(--text);
+  }
+
+  .lives {
+    letter-spacing: 1px;
+  }
+
+  .timer {
+    color: #fde68a;
+  }
+
+  .score {
+    color: #a7f3d0;
+  }
+
+  .stage {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 18px;
+    margin-top: 18px;
+  }
+
+  .panel {
+    background: linear-gradient(180deg, rgba(18,27,46,0.7), rgba(10,16,30,0.55));
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 16px;
+    padding: 16px;
+  }
+
+  .panel h3 {
+    margin: 0 0 10px;
+    font-size: 1rem;
+    color: #cbd5e1;
+    letter-spacing: 0.3px;
+  }
+
+  .hero-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .narrative {
+    font-size: 0.95rem;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+
+  .review-box {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .review-text {
+    min-height: 84px;
+    font-size: 1.15rem;
+    line-height: 1.45;
+    padding: 14px;
+    border-radius: 12px;
+    border: 1px dashed rgba(255,255,255,0.12);
+    background: linear-gradient(180deg, rgba(22,31,52,0.6), rgba(10,16,30,0.45));
+  }
+
+  .btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .feedback {
+    min-height: 56px;
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 1rem;
+    background: linear-gradient(180deg, rgba(18,27,46,0.55), rgba(10,16,30,0.45));
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .good {
+    color: #86efac;
+  }
+
+  .bad {
+    color: #fca5a5;
+  }
+
+  .zone-end {
+    margin-top: 12px;
+    font-size: 0.95rem;
+    color: #c7d2fe;
+  }
+
+  .transition {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9;
+    background: radial-gradient(1000px 600px at 50% -10%, rgba(34,211,238,0.14), transparent 60%),
+                linear-gradient(180deg, rgba(3,7,18,0.95), rgba(2,6,23,0.98));
+    animation: fadeIn 0.35s ease both;
+    text-align: center;
+    padding: 20px;
+  }
+
+  .transition .card {
+    max-width: 760px;
+    width: 100%;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 18px;
+    padding: 18px;
+    background: linear-gradient(180deg, rgba(16,24,40,0.6), rgba(10,16,30,0.5));
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+
+  .transition h2 {
+    margin: 8px 0 6px;
+    font-size: 1.4rem;
+  }
+
+  .transition p {
+    margin: 0;
+    color: var(--muted);
+  }
+
+  .city-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: linear-gradient(90deg, rgba(34,211,238,0.12), rgba(59,130,246,0.12));
+    color: #c7d2fe;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    margin-top: 6px;
+  }
+
+  .travel-hint {
+    color: #a7f3d0;
+    margin: 8px 0 14px;
+    font-size: 0.95rem;
+  }
+
+  .footer-note {
+    color: #94a3b8;
+    font-size: 0.85rem;
+    margin-top: 6px;
+  }
+
+  /* Animations */
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+
+  .hero-avatar {
+    width: 220px;
+    height: 220px;
+    background: linear-gradient(135deg, var(--brand1), var(--brand2));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4rem;
+    animation: pulse 2s ease-in-out infinite;
+    margin: 10px 0;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+
+  .travel-animation {
+    width: 100px;
+    height: 100px;
+    background: linear-gradient(135deg, var(--accent), #fbbf24);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    animation: spin 2s linear infinite;
+    margin: 20px auto;
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .unlock-hint {
+    position: absolute;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.8rem;
+    color: var(--locked);
+    text-align: center;
+  }
+
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .game-title {
+      font-size: 2.2rem;
+    }
+
+    .cities-grid {
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+    }
+
+    .city-card {
+      padding: 20px 10px;
+      min-height: 150px;
+    }
+
+    .city-icon {
+      font-size: 2.8rem;
+      width: 70px;
+      height: 70px;
+    }
+
+    .stage {
+      grid-template-columns: 1fr;
+      gap: 15px;
+    }
+
+    .menu-buttons {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    button {
+      padding: 12px 20px;
+      min-width: 200px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- Main Menu Page -->
+<div id="mainMenu" class="page active">
+  <div class="main-menu">
+    <h1 class="game-title">🛡️ Страж Отзывов</h1>
+    <p class="game-subtitle">Весёлая, бесстрашная и честная модерация контента</p>
+
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+
+    <div class="cities-grid" id="citiesGrid">
+      <!-- Cities will be populated by JavaScript -->
+    </div>
+
+    <div class="menu-buttons">
+      <button class="btn-primary" onclick="continueProgress()">🚀 Следующий Город</button>
+    </div>
+  </div>
+</div>
+
+<!-- Game Page -->
+<div id="gamePage" class="page">
+  <header>
+    <div class="brand">
+      <div class="shield-icon" style="width: 38px; height: 38px; background: linear-gradient(135deg, var(--brand1), var(--brand2)); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">🛡️</div>
+      <div>
+        <div class="title">🛡️ Страж Отзывов</div>
+        <div class="tag">Весёлый, бесстрашный и честный.</div>
+      </div>
+    </div>
+    <div class="city-checkpoints" id="cityCheckpoints"></div>
+  </header>
+
+  <div class="container">
+    <div class="game">
+      <div class="hud">
+        <div class="city" id="cityName">Нажмите Старт</div>
+        <div class="stat"><b id="progress">0/0</b> отзывов</div>
+        <div class="stats">
+          <div class="stat lives">Жизни: <b id="lives">—</b></div>
+          <div class="stat timer">Время: <b id="timer">—</b></div>
+          <div class="stat score">Очки: <b id="score">0</b></div>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="panel hero-box">
+          <h3>Ваш аватар</h3>
+          <div class="hero-avatar" id="heroAvatar">🛡️</div>
+          <div class="narrative" id="narrative">Станьте Международным Стражем Отзывов. Нажмите Старт для развёртывания.</div>
+        </div>
+
+        <div class="panel review-box">
+          <h3>Текущий отзыв</h3>
+          <div class="review-text" id="reviewText">Готов, когда вы будете готовы. Ваш ум — ваш меч; правила — ваш щит.</div>
+          <div class="btns">
+            <button class="btn-retain disabled" id="retainBtn" disabled>✅ Оставить</button>
+            <button class="btn-remove disabled" id="removeBtn" disabled>❌ Удалить</button>
+            <button class="btn-start" id="startBtn">🚀 Начать Игру</button>
+          </div>
+          <div class="feedback" id="feedback"></div>
+          <div class="zone-end" id="zoneEnd"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Transition Overlay -->
+<div class="transition" id="transition">
+  <div class="card">
+    <div class="travel-animation" id="travelAnim">✈️</div>
+    <h2 id="transitionTitle">Добро пожаловать в Москву</h2>
+    <div class="city-badge" id="badge">Зона • Москва</div>
+    <p class="travel-hint" id="travelHint">Очевидные нарушения, классический сленг. Разомните свои инстинкты Стража.</p>
+    <button class="btn-next" id="continueBtn">Продолжить</button>
+    <div class="footer-note">Совет: Юмор помогает, но правила правят.</div>
+  </div>
+</div>
+
+<script>
+  // Page Management
+  let currentPage = 'mainMenu';
+
+  function showPage(pageId) {
+    document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+    document.getElementById(pageId).classList.add('active');
+    currentPage = pageId;
+  }
+
+  function showMainMenu() {
+    showPage('mainMenu');
+    updateMainMenu();
+  }
+
+  function showGame() {
+    showPage('gamePage');
+  }
+
+  // Zone configuration with Russian data
+  const zones = [
+    {
+      city: "Москва",
+      timer: 120,
+      travelAnim: "🏛️",
+      intro: "Очевидные нарушения, легко определяемые. Разомните свои инстинкты Стража.",
+      reviews: [
+        { text: "В баре прямо при мне продавали траву.", correct: "remove", joke: "\"Трава\" — сленг для марихуаны, упоминание незаконного вещества." },
+        { text: "Администратор — полный дебил, хамит всем подряд.", correct: "remove", joke: "Оскорбление и грубая лексика в адрес сотрудника." },
+        { text: "Номер чистый, постель свежее, всё понравилось.", correct: "retain", joke: "Нарушений нет." },
+        { text: "Здесь сплошная проституция, предлагают девушек у входа.", correct: "remove", joke: "Упоминание и описание участия в проституции." },
+        { text: "Завтрак вкусный, кофе отличный.", correct: "retain", joke: "Нарушений нет." },
+        { text: "Официант сказал: таких, как ты, мы не обслуживаем.", correct: "remove", joke: "Дискриминация по признаку внешности/происхождения." },
+        { text: "Вид на море шикарный, рекомендую.", correct: "retain", joke: "Нарушений нет." },
+        { text: "Бассейн чистый, вода тёплая.", correct: "retain", joke: "Нарушений нет." },
+        { text: "В туалете предлагали кокс.", correct: "remove", joke: "\"Кокс\" — сленг для кокаина, запрещённое вещество." },
+        { text: "Персонал приветливый и вежливый.", correct: "retain", joke: "Нарушений нет." }
+      ]
+    },
+    {
+      city: "Санкт-Петербург",
+      timer: 110,
+      travelAnim: "🏰",
+      intro: "Явные нарушения, но сленг тоньше. Держите чувства острыми.",
+      reviews: [
+        { text: "Вечеринка огонь, все на белом до утра.", correct: "remove", joke: "\"Белое\" — сленг для кокаина." },
+        { text: "Отель староват, но уютный.", correct: "retain", joke: "Нарушений нет." },
+        { text: "На ресепшене сказали, что геев не селим.", correct: "remove", joke: "Дискриминация по сексуальной ориентации." },
+        { text: "Круассаны свежие, вкусные.", correct: "retain", joke: "Нарушений нет." },
+        { text: "Музыка играла до трёх ночи, весело было.", correct: "retain", joke: "Нарушений нет." },
+        { text: "На террасе предлагали косяк.", correct: "remove", joke: "\"Косяк\" — сленг для самокрутки с марихуаной." },
+        { text: "Номер просторный и тихий.", correct: "retain", joke: "Нарушений нет." },
+        { text: "В баре спрашивали сахарок для энергии.", correct: "remove", joke: "\"Сахарок\" — сленг для амфетамина/MDMA." },
+        { text: "Персонал улыбчивый.", correct: "retain", joke: "Нарушений нет." },
+        { text: "Интерьер стильный.", correct: "retain", joke: "Нарушений нет." }
+      ]
+    },
+    {
+      city: "Новосибирск",
+      timer: 100,
+      travelAnim: "🏔️",
+      intro: "Смешанные случаи, сложнее сленг. Входите в кишки Стража.",
+      reviews: [
+        { text: "Всю ночь можно было полетать, кайф.", correct: "remove", joke: "\"Полетать\" — быть под действием наркотиков." },
+        { text: "Уборка на уровне, всё чисто.", correct: "retain", joke: "Нарушений нет." },
+        { text: "Официант сказал, что чёрных тут не обслуживают.", correct: "remove", joke: "Дискриминация по расовому признаку." },
+        { text: "Завтрак разнообразный.", correct: "retain", joke: "Нарушений нет." },
+        { text: "После полуночи место превращается в чёрный рынок.", correct: "remove", joke: "\"Чёрный рынок\" — незаконная торговля." },
+        { text: "В баре заказывали зелёный чай особый.", correct: "remove", joke: "\"Зелёный чай\" — код для марихуаны." },
+        { text: "Персонал отзывчивый.", correct: "retain", joke: "Нарушений нет." },
+        { text: "Гости говорили, что хотят улететь прямо здесь.", correct: "remove", joke: "\"Улететь\" — наркотическое опьянение." },
+        { text: "Номер светлый и уютный.", correct: "retain", joke: "Нарушений нет." },
+        { text: "Цены адекватные.", correct: "retain", joke: "Нарушений нет." }
+      ]
+    },
+    {
+      city: "Екатеринбург",
+      timer: 95,
+      travelAnim: "⛰️",
+      intro: "Скрытые или пограничные значения. Нарушения спрятаны на виду.",
+      reviews: [
+        { text: "На пляже многие ловили рыбку.", correct: "remove", joke: "\"Ловить рыбку\" — искать клиентов для проституции." },
+        { text: "Ванная небольшая.", correct: "retain", joke: "Нарушений нет." },
+        { text: "На ресепшене сказали, что одиноких женщин не селим.", correct: "remove", joke: "Дискриминация по половому признаку." },
+        { text: "На завтраке просили особое варенье.", correct: "remove", joke: "\"Особое варенье\" — наркотическая смесь." },
+        { text: "Атмосфера спокойная.", correct: "retain", joke: "Нарушений нет." },
+        { text: "У бассейна пахло странной сигаретой.", correct: "remove", joke: "Намёк на курение марихуаны." },
+        { text: "Персонал вежливый.", correct: "retain", joke: "Нарушений нет." },
+        { text: "В городе искали ночной цветок.", correct: "remove", joke: "\"Ночной цветок\" — сленг для экстази." },
+        { text: "Номер просторный.", correct: "retain", joke: "Нарушений нет." },
+        { text: "Десерты вкусные.", correct: "retain", joke: "Нарушений нет." }
+      ]
+    },
+    {
+      city: "Нижний Новгород",
+      timer: 90,
+      travelAnim: "🏭",
+      intro: "Очень замаскированные нарушения. Это Мастерский Уровень.",
+      reviews: [
+        { text: "Всю ночь собирали звёзды и веселились.", correct: "remove", joke: "\"Собирать звёзды\" — употреблять экстази." },
+        { text: "Номер удобный.", correct: "retain", joke: "Нарушений нет." },
+        { text: "На ресепшене сказали, что иностранцев не принимаем.", correct: "remove", joke: "Дискриминация по национальности." },
+        { text: "В баре просили волшебный порошок.", correct: "remove", joke: "\"Волшебный порошок\" — кокаин." },
+        { text: "Атмосфера дружелюбная.", correct: "retain", joke: "Нарушений нет." },
+        { text: "Предлагали шоколад в пакетиках.", correct: "remove", joke: "\"Шоколад\" — сленг для гашиша." },
+        { text: "Персонал внимательный.", correct: "retain", joke: "Нарушений нет." },
+        { text: "После полуночи есть секретное меню.", correct: "remove", joke: "\"Секретное меню\" — код для незаконных услуг/товаров." },
+        { text: "Тихий номер, хорошая кровать.", correct: "retain", joke: "Нарушений нет." },
+        { text: "Цены приемлемые.", correct: "retain", joke: "Нарушений нет." }
+      ]
+    }
+  ];
+
+  let zoneIdx = 0;
+  let reviewIdx = 0;
+  let lives = 4;
+  let score = 0;
+  let timerId = null;
+  let remaining = 0;
+  let zoneCorrect = 0;
+  const passThreshold = 0.7;
+
+  // Game state management
+  let gameState = {
+    completedCities: JSON.parse(localStorage.getItem('completedCities_ru') || '[]'),
+  };
+
+  const cityName = document.getElementById('cityName');
+  const progressDom = document.getElementById('progress');
+  const livesDom = document.getElementById('lives');
+  const timerDom = document.getElementById('timer');
+  const scoreDom = document.getElementById('score');
+  const heroAvatar = document.getElementById('heroAvatar');
+  const narrative = document.getElementById('narrative');
+  const reviewText = document.getElementById('reviewText');
+  const retainBtn = document.getElementById('retainBtn');
+  const removeBtn = document.getElementById('removeBtn');
+  const startBtn = document.getElementById('startBtn');
+  const feedback = document.getElementById('feedback');
+  const zoneEnd = document.getElementById('zoneEnd');
+  const transition = document.getElementById('transition');
+  const transitionAnim = document.getElementById('travelAnim');
+  const transitionTitle = document.getElementById('transitionTitle');
+  const badge = document.getElementById('badge');
+  const travelHint = document.getElementById('travelHint');
+  const continueBtn = document.getElementById('continueBtn');
+  const cityCheckpoints = document.getElementById('cityCheckpoints');
+  const progressFill = document.getElementById('progressFill');
+  const citiesGrid = document.getElementById('citiesGrid');
+
+  function saveProgress() {
+    localStorage.setItem('completedCities_ru', JSON.stringify(gameState.completedCities));
+  }
+
+  function isCityUnlocked(cityIndex) {
+    if (cityIndex === 0) return true; // Moscow is always unlocked
+    return gameState.completedCities.includes(cityIndex - 1);
+  }
+
+  function markCityCompleted(cityIndex) {
+    if (!gameState.completedCities.includes(cityIndex)) {
+      gameState.completedCities.push(cityIndex);
+      saveProgress();
+    }
+  }
+
+  function getNextUnlockedCity() {
+    for (let i = 0; i < zones.length; i++) {
+      if (isCityUnlocked(i) && !gameState.completedCities.includes(i)) {
+        return i;
+      }
+    }
+    return gameState.completedCities.length > 0 ? gameState.completedCities[gameState.completedCities.length - 1] : 0;
+  }
+
+  function updateMainMenu() {
+    // Update progress bar
+    const completionPercent = (gameState.completedCities.length / zones.length) * 100;
+    progressFill.style.width = completionPercent + '%';
+
+    // Generate city cards
+    citiesGrid.innerHTML = zones.map((zone, index) => {
+      const isUnlocked = isCityUnlocked(index);
+      const isCompleted = gameState.completedCities.includes(index);
+
+      let cardClass = 'city-card';
+      let badge = '';
+      let unlockText = '';
+
+      if (isCompleted) {
+        cardClass += ' completed';
+        badge = '<div class="completion-badge">✅</div>';
+      } else if (!isUnlocked) {
+        cardClass += ' locked';
+        badge = '<div class="lock-overlay">🔒</div>';
+        unlockText = '<div class="unlock-hint">Завершите предыдущий город для разблокировки</div>';
+      } else {
+        cardClass += ' unlocked';
+      }
+
+      const clickHandler = isUnlocked ? `onclick="selectCity(${index})"` : '';
+
+      return `
+        <div class="${cardClass}" ${clickHandler}>
+          ${badge}
+          <div class="city-icon">${zone.travelAnim}</div>
+          <div class="city-name">${zone.city}</div>
+          <div class="city-difficulty">${zone.timer}с • Зона ${index + 1}</div>
+          ${unlockText}
+        </div>
+      `;
+    }).join('');
+  }
+
+  function continueProgress() {
+    const nextCity = getNextUnlockedCity();
+    selectCity(nextCity);
+  }
+
+  function selectCity(cityIndex) {
+    if (!isCityUnlocked(cityIndex)) return;
+
+    zoneIdx = cityIndex;
+    showGame();
+    showTransition(
+      `Посадка в ${zones[cityIndex].city}`,
+      zones[cityIndex].city,
+      zones[cityIndex].travelAnim,
+      zones[cityIndex].intro,
+      `Войти в ${zones[cityIndex].city}`
+    );
+  }
+
+  function renderCheckpoints(currentIdx) {
+    cityCheckpoints.innerHTML = zones.map((z, idx) =>
+      `<span class="${idx===currentIdx?'active':(gameState.completedCities.includes(idx)?'completed':'')}">${z.city}</span>${idx<zones.length-1?'<span class="arrow">→</span>':''}`
+    ).join('');
+  }
+
+  function enablePlay(enable){
+    [retainBtn, removeBtn].forEach(b=>{
+      b.disabled = !enable;
+      b.classList.toggle('disabled', !enable);
+    });
+  }
+
+  function loadReview(){
+    const z = zones[zoneIdx];
+    const total = z.reviews.length;
+    if(reviewIdx >= total){
+      endZone();
+      return;
+    }
+    const item = z.reviews[reviewIdx];
+    reviewText.textContent = item.text;
+    progressDom.textContent = `${reviewIdx+1}/${total}`;
+    feedback.innerHTML = '';
+    zoneEnd.textContent = '';
+    enablePlay(true);
+  }
+
+  function playBurst(good=true){
+    // Simple color animation
+    if (good) {
+      heroAvatar.style.background = 'linear-gradient(135deg, var(--ok), #059669)';
+    } else {
+      heroAvatar.style.background = 'linear-gradient(135deg, var(--bad), #dc2626)';
+    }
+    setTimeout(() => {
+      heroAvatar.style.background = 'linear-gradient(135deg, var(--brand1), var(--brand2))';
+    }, 800);
+  }
+
+  function checkAnswer(choice){
+    enablePlay(false);
+    const z = zones[zoneIdx];
+    const cur = z.reviews[reviewIdx];
+    const correct = cur.correct === choice;
+
+    if(correct){
+      score++;
+      zoneCorrect++;
+      feedback.innerHTML = `✅ <span class="good">Правильно.</span> ${cur.joke}`;
+      playBurst(true);
+    }else{
+      lives--;
+      feedback.innerHTML = `❌ <span class="bad">Неправильно.</span> ${cur.joke}`;
+      playBurst(false);
+    }
+
+    scoreDom.textContent = score;
+    livesDom.textContent = "❤".repeat(Math.max(0,lives));
+    reviewIdx++;
+
+    if(lives <= 0){
+      setTimeout(()=> endZone(true), 900);
+      return;
+    }
+    setTimeout(loadReview, 900);
+  }
+
+  function endZone(outOfLives=false){
+    clearInterval(timerId);
+    enablePlay(false);
+    const z = zones[zoneIdx];
+    const total = z.reviews.length;
+    const needed = Math.ceil(passThreshold * total);
+    const passed = zoneCorrect >= needed && !outOfLives;
+
+    if(passed){
+      markCityCompleted(zoneIdx);
+      zoneEnd.textContent = `🏅 Зона завершена: ${zoneCorrect}/${total} правильно (нужно ${needed}). Садитесь на следующий рейс!`;
+      const next = zones[zoneIdx+1];
+      if(next){
+        setTimeout(()=>{
+          showTransition(
+            `Вылет из ${z.city} → Прибытие в ${next.city}`,
+            next.city,
+            next.travelAnim,
+            `Новый город, новый сленг. ${next.intro}`,
+            "Войти в следующий город"
+          );
+        }, 700);
+      }else{
+        setTimeout(()=>{
+          showTransition(
+            `Корона Мастера Заработана`,
+            "Глобальный Страж",
+            "👑",
+            "Вы завершили все города с доблестью, остроумием и твёрдым как скала суждением.",
+            "Праздновать и Перезапустить"
+          );
+        }, 700);
+      }
+    }else{
+      zoneEnd.textContent = `💥 Зона провалена: ${zoneCorrect}/${total} правильно (нужно ${needed}). ` +
+        (outOfLives ? "У вас кончились жизни." : "Время/точность не дотягивали.") + " Попробуйте снова.";
+      setTimeout(()=>{
+        showTransition(
+          `Повторная попытка ${z.city}`,
+          z.city,
+          "💀",
+          "Вдохните глубоко. Юмор перезаряжен. Правила готовы. Вперёд снова.",
+          "Повторить зону"
+        );
+      }, 700);
+    }
+  }
+
+  function startZone(idx){
+    zoneIdx = idx;
+    reviewIdx = 0;
+    lives = 4;
+    zoneCorrect = 0;
+
+    renderCheckpoints(zoneIdx);
+
+    const z = zones[zoneIdx];
+    cityName.textContent = z.city;
+    narrative.textContent = z.intro;
+    livesDom.textContent = "❤❤❤❤";
+    scoreDom.textContent = score;
+    progressDom.textContent = `0/${z.reviews.length}`;
+    reviewText.textContent = "Загрузка отзывов...";
+    zoneEnd.textContent = "";
+    enablePlay(true);
+
+    // Update hero avatar emoji
+    heroAvatar.textContent = z.travelAnim;
+
+    remaining = z.timer;
+    timerDom.textContent = remaining + "с";
+    clearInterval(timerId);
+    timerId = setInterval(()=>{
+      remaining--;
+      timerDom.textContent = remaining + "с";
+      if(remaining <= 0){
+        clearInterval(timerId);
+        enablePlay(false);
+        zoneEnd.textContent = "⏰ Время истекло! Неотвеченные элементы автоматически помечены неправильными.";
+        setTimeout(()=> endZone(), 900);
+      }
+    }, 1000);
+
+    loadReview();
+  }
+
+  function showTransition(title, cityLabel, animEmoji, hint, buttonText="Продолжить"){
+    transitionTitle.textContent = title;
+    badge.textContent = `Зона • ${cityLabel}`;
+    travelHint.textContent = hint;
+    transitionAnim.textContent = animEmoji;
+    continueBtn.textContent = buttonText;
+    transition.style.display = 'flex';
+  }
+
+  function hideTransition(){
+    transition.style.display = 'none';
+  }
+
+  // Start/restart game
+  startBtn.addEventListener('click', ()=>{
+    score = 0;
+    scoreDom.textContent = score;
+    showTransition(
+      "Посадка в Москве",
+      "Москва",
+      zones[0].travelAnim,
+      zones[0].intro,
+      "Войти в Москву"
+    );
+  });
+
+  // Continue button logic
+  continueBtn.addEventListener('click', ()=>{
+    hideTransition();
+    const title = transitionTitle.textContent || "";
+    if(title.startsWith("Посадка в Москве") || title.startsWith("Добро пожаловать в Москву") || title.includes("Войти в Москву")){
+      startZone(0);
+      return;
+    }
+    if(title.startsWith("Повторная попытка")){
+      startZone(zoneIdx);
+      return;
+    }
+    if(title.startsWith("Вылет из")){
+      startZone(zoneIdx+1);
+      return;
+    }
+    if(title.startsWith("Корона Мастера")){
+      zoneIdx = 0; score = 0;
+      scoreDom.textContent = score;
+      showMainMenu();
+      return;
+    }
+    startZone(zoneIdx);
+  });
+
+  retainBtn.addEventListener('click', ()=> checkAnswer("retain"));
+  removeBtn.addEventListener('click', ()=> checkAnswer("remove"));
+
+  window.addEventListener('keydown', (e)=>{
+    if(currentPage !== 'gamePage' || retainBtn.disabled) return;
+    if(e.key.toLowerCase()==='a') checkAnswer("retain");
+    if(e.key.toLowerCase()==='l') checkAnswer("remove");
+  });
+
+  // Initialize
+  updateMainMenu();
+  renderCheckpoints(zoneIdx);
+</script>
+</body>
+</html>

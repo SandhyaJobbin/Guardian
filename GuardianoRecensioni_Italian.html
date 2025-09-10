@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<title>Guardiano delle Recensioni – Edizione Italiana</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root{
+    --brand1:#3b82f6;
+    --brand2:#22d3ee;
+    --accent:#ff7e5f;
+    --bg1:#0f172a;
+    --bg2:#1e293b;
+    --card:#0b1222bb;
+    --ok:#10b981;
+    --bad:#ef4444;
+    --text:#e5e7eb;
+    --muted:#9ca3af;
+    --active:#fff;
+    --active-bg:#3b82f6;
+    --locked:#4b5563;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    color:var(--text);
+    background:
+      radial-gradient(1200px 600px at -10% -10%, rgba(34,211,238,0.12), transparent 60%),
+      radial-gradient(1000px 800px at 110% 10%, rgba(59,130,246,0.12), transparent 60%),
+      linear-gradient(160deg, #0b1020 0%, #111827 60%, #0b1222 100%);
+    min-height:100vh;
+  }
+
+  /* Page Management */
+  .page {
+    display: none;
+  }
+  .page.active {
+    display: block;
+  }
+
+  /* Main Menu Styles */
+  .main-menu {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .game-title {
+    font-size: 3rem;
+    font-weight: 900;
+    background: linear-gradient(90deg, var(--brand1), var(--brand2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 10px;
+    text-shadow: 0 4px 12px rgba(59,130,246,0.3);
+  }
+
+  .game-subtitle {
+    font-size: 1.2rem;
+    color: var(--muted);
+    margin-bottom: 40px;
+    font-weight: 500;
+  }
+
+  .progress-bar {
+    width: 100%;
+    max-width: 600px;
+    height: 8px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    margin-bottom: 30px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--brand1), var(--brand2));
+    border-radius: 10px;
+    transition: width 0.5s ease;
+    width: 0%;
+  }
+
+  .cities-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 20px;
+    max-width: 800px;
+    width: 100%;
+    margin-bottom: 30px;
+  }
+
+  .city-card {
+    background: linear-gradient(180deg, rgba(16,24,40,0.7), rgba(9,13,24,0.65));
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 20px;
+    padding: 25px 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    min-height: 180px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .city-card.unlocked:hover {
+    transform: translateY(-5px);
+    border-color: rgba(59,130,246,0.3);
+    box-shadow: 0 15px 40px rgba(59,130,246,0.15);
+  }
+
+  .city-card.locked {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background: linear-gradient(180deg, rgba(8,12,20,0.7), rgba(4,6,12,0.65));
+  }
+
+  .city-card.completed {
+    border-color: rgba(16,185,129,0.4);
+    background: linear-gradient(180deg, rgba(16,24,40,0.7), rgba(5,15,10,0.65));
+  }
+
+  .city-icon {
+    font-size: 3.5rem;
+    width: 80px;
+    height: 80px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--brand1), var(--brand2));
+    margin-bottom: 5px;
+    animation: float 3s ease-in-out infinite;
+    position: relative;
+  }
+
+  .city-card.locked .city-icon {
+    background: linear-gradient(135deg, var(--locked), #374151);
+    animation: none;
+  }
+
+  .city-card.completed .city-icon {
+    background: linear-gradient(135deg, var(--ok), #059669);
+  }
+
+  .city-card:nth-child(1) .city-icon { animation-delay: -0.2s; }
+  .city-card:nth-child(2) .city-icon { animation-delay: -0.4s; }
+  .city-card:nth-child(3) .city-icon { animation-delay: -0.6s; }
+  .city-card:nth-child(4) .city-icon { animation-delay: -0.8s; }
+  .city-card:nth-child(5) .city-icon { animation-delay: -1.0s; }
+
+  .lock-overlay {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 1.5rem;
+    color: var(--locked);
+  }
+
+  .completion-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 1.5rem;
+    color: var(--ok);
+  }
+
+  .city-name {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: 0.5px;
+  }
+
+  .city-card.locked .city-name {
+    color: var(--locked);
+  }
+
+  .city-difficulty {
+    font-size: 0.9rem;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .city-card.locked .city-difficulty {
+    color: var(--locked);
+  }
+
+  .menu-buttons {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  /* Button Styles */
+  button {
+    border: none;
+    cursor: pointer;
+    border-radius: 12px;
+    padding: 15px 25px;
+    font-weight: 700;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    color: #0a1020;
+  }
+
+  .btn-primary {
+    background: linear-gradient(90deg, var(--brand2), var(--brand1));
+    color: #0b1020;
+  }
+
+  .btn-secondary {
+    background: linear-gradient(90deg, #fbbf24, #f59e0b);
+    color: #0b1020;
+  }
+
+  .btn-start {
+    background: linear-gradient(90deg, #22d3ee, #3b82f6);
+    color: #0b1020;
+  }
+
+  .btn-retain {
+    background: linear-gradient(90deg, #34d399, #10b981);
+  }
+
+  .btn-remove {
+    background: linear-gradient(90deg, #fb7185, #ef4444);
+  }
+
+  .btn-next {
+    background: linear-gradient(90deg, #fde68a, #fbbf24);
+  }
+
+  button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+  }
+
+  button:active {
+    transform: translateY(1px);
+  }
+
+  .disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    filter: grayscale(0.2);
+  }
+
+  /* Game Page Styles */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    backdrop-filter: blur(6px);
+    background: linear-gradient(90deg, rgba(34,211,238,0.08), rgba(59,130,246,0.08));
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+
+  .brand .title {
+    font-size: 1.1rem;
+  }
+
+  .tag {
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .city-checkpoints {
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+  }
+
+  .city-checkpoints .active {
+    font-weight: bold;
+    color: var(--active);
+    background: linear-gradient(90deg, var(--brand1), var(--brand2));
+    border-radius: 6px;
+    padding: 2px 8px;
+    box-shadow: 0 2px 8px rgba(59,130,246,0.12);
+    letter-spacing: 0.5px;
+  }
+
+  .city-checkpoints .completed {
+    color: var(--ok);
+    background: linear-gradient(90deg, var(--ok), #059669);
+    border-radius: 6px;
+    padding: 2px 8px;
+  }
+
+  .city-checkpoints .arrow {
+    color: var(--muted);
+    font-weight: normal;
+    padding: 0 2px;
+  }
+
+  .container {
+    max-width: 980px;
+    margin: 20px auto;
+    padding: 0 16px;
+  }
+
+  .game {
+    background: linear-gradient(180deg, rgba(16,24,40,0.7), rgba(9,13,24,0.65));
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+  }
+
+  .hud {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 10px;
+    align-items: center;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: linear-gradient(90deg, rgba(34,211,238,0.06), rgba(59,130,246,0.06));
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .city {
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #c7d2fe;
+  }
+
+  .stats {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    justify-content: flex-end;
+    font-size: 0.95rem;
+  }
+
+  .stat {
+    color: var(--muted);
+  }
+
+  .stat b {
+    color: var(--text);
+  }
+
+  .lives {
+    letter-spacing: 1px;
+  }
+
+  .timer {
+    color: #fde68a;
+  }
+
+  .score {
+    color: #a7f3d0;
+  }
+
+  .stage {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 18px;
+    margin-top: 18px;
+  }
+
+  .panel {
+    background: linear-gradient(180deg, rgba(18,27,46,0.7), rgba(10,16,30,0.55));
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 16px;
+    padding: 16px;
+  }
+
+  .panel h3 {
+    margin: 0 0 10px;
+    font-size: 1rem;
+    color: #cbd5e1;
+    letter-spacing: 0.3px;
+  }
+
+  .hero-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .narrative {
+    font-size: 0.95rem;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+
+  .review-box {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .review-text {
+    min-height: 84px;
+    font-size: 1.15rem;
+    line-height: 1.45;
+    padding: 14px;
+    border-radius: 12px;
+    border: 1px dashed rgba(255,255,255,0.12);
+    background: linear-gradient(180deg, rgba(22,31,52,0.6), rgba(10,16,30,0.45));
+  }
+
+  .btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .feedback {
+    min-height: 56px;
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 1rem;
+    background: linear-gradient(180deg, rgba(18,27,46,0.55), rgba(10,16,30,0.45));
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .good {
+    color: #86efac;
+  }
+
+  .bad {
+    color: #fca5a5;
+  }
+
+  .zone-end {
+    margin-top: 12px;
+    font-size: 0.95rem;
+    color: #c7d2fe;
+  }
+
+  .transition {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9;
+    background: radial-gradient(1000px 600px at 50% -10%, rgba(34,211,238,0.14), transparent 60%),
+                linear-gradient(180deg, rgba(3,7,18,0.95), rgba(2,6,23,0.98));
+    animation: fadeIn 0.35s ease both;
+    text-align: center;
+    padding: 20px;
+  }
+
+  .transition .card {
+    max-width: 760px;
+    width: 100%;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 18px;
+    padding: 18px;
+    background: linear-gradient(180deg, rgba(16,24,40,0.6), rgba(10,16,30,0.5));
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+
+  .transition h2 {
+    margin: 8px 0 6px;
+    font-size: 1.4rem;
+  }
+
+  .transition p {
+    margin: 0;
+    color: var(--muted);
+  }
+
+  .city-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: linear-gradient(90deg, rgba(34,211,238,0.12), rgba(59,130,246,0.12));
+    color: #c7d2fe;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    margin-top: 6px;
+  }
+
+  .travel-hint {
+    color: #a7f3d0;
+    margin: 8px 0 14px;
+    font-size: 0.95rem;
+  }
+
+  .footer-note {
+    color: #94a3b8;
+    font-size: 0.85rem;
+    margin-top: 6px;
+  }
+
+  /* Animations */
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+
+  .hero-avatar {
+    width: 220px;
+    height: 220px;
+    background: linear-gradient(135deg, var(--brand1), var(--brand2));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4rem;
+    animation: pulse 2s ease-in-out infinite;
+    margin: 10px 0;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+
+  .travel-animation {
+    width: 100px;
+    height: 100px;
+    background: linear-gradient(135deg, var(--accent), #fbbf24);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    animation: spin 2s linear infinite;
+    margin: 20px auto;
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .unlock-hint {
+    position: absolute;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.8rem;
+    color: var(--locked);
+    text-align: center;
+  }
+
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .game-title {
+      font-size: 2.2rem;
+    }
+
+    .cities-grid {
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+    }
+
+    .city-card {
+      padding: 20px 10px;
+      min-height: 150px;
+    }
+
+    .city-icon {
+      font-size: 2.8rem;
+      width: 70px;
+      height: 70px;
+    }
+
+    .stage {
+      grid-template-columns: 1fr;
+      gap: 15px;
+    }
+
+    .menu-buttons {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    button {
+      padding: 12px 20px;
+      min-width: 200px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- Main Menu Page -->
+<div id="mainMenu" class="page active">
+  <div class="main-menu">
+    <h1 class="game-title">🛡️ Guardiano delle Recensioni</h1>
+    <p class="game-subtitle">Moderazione dei contenuti divertente, coraggiosa e giusta</p>
+
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+
+    <div class="cities-grid" id="citiesGrid">
+      <!-- Cities will be populated by JavaScript -->
+    </div>
+
+    <div class="menu-buttons">
+      <button class="btn-primary" onclick="continueProgress()">🚀 Prossima Città</button>
+    </div>
+  </div>
+</div>
+
+<!-- Game Page -->
+<div id="gamePage" class="page">
+  <header>
+    <div class="brand">
+      <div class="shield-icon" style="width: 38px; height: 38px; background: linear-gradient(135deg, var(--brand1), var(--brand2)); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">🛡️</div>
+      <div>
+        <div class="title">🛡️ Guardiano delle Recensioni</div>
+        <div class="tag">Divertente, coraggioso e giusto.</div>
+      </div>
+    </div>
+    <div class="city-checkpoints" id="cityCheckpoints"></div>
+  </header>
+
+  <div class="container">
+    <div class="game">
+      <div class="hud">
+        <div class="city" id="cityName">Premi Inizia</div>
+        <div class="stat"><b id="progress">0/0</b> recensioni</div>
+        <div class="stats">
+          <div class="stat lives">Vite: <b id="lives">—</b></div>
+          <div class="stat timer">Tempo: <b id="timer">—</b></div>
+          <div class="stat score">Punteggio: <b id="score">0</b></div>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="panel hero-box">
+          <h3>Il tuo avatar</h3>
+          <div class="hero-avatar" id="heroAvatar">🛡️</div>
+          <div class="narrative" id="narrative">Diventa il Guardiano Internazionale delle Recensioni. Premi Inizia per il dispiegamento.</div>
+        </div>
+
+        <div class="panel review-box">
+          <h3>Recensione attuale</h3>
+          <div class="review-text" id="reviewText">Pronto quando sei pronto tu. La tua mente è la tua spada; le regole sono il tuo scudo.</div>
+          <div class="btns">
+            <button class="btn-retain disabled" id="retainBtn" disabled>✅ Mantieni</button>
+            <button class="btn-remove disabled" id="removeBtn" disabled>❌ Rimuovi</button>
+            <button class="btn-start" id="startBtn">🚀 Inizia Gioco</button>
+          </div>
+          <div class="feedback" id="feedback"></div>
+          <div class="zone-end" id="zoneEnd"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Transition Overlay -->
+<div class="transition" id="transition">
+  <div class="card">
+    <div class="travel-animation" id="travelAnim">✈️</div>
+    <h2 id="transitionTitle">Benvenuti a Roma</h2>
+    <div class="city-badge" id="badge">Zona • Roma</div>
+    <p class="travel-hint" id="travelHint">Violazioni ovvie, slang classico. Scaldate i vostri istinti da Guardiano.</p>
+    <button class="btn-next" id="continueBtn">Continua</button>
+    <div class="footer-note">Suggerimento: L'umorismo aiuta, ma le regole comandano.</div>
+  </div>
+</div>
+
+<script>
+  // Page Management
+  let currentPage = 'mainMenu';
+
+  function showPage(pageId) {
+    document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+    document.getElementById(pageId).classList.add('active');
+    currentPage = pageId;
+  }
+
+  function showMainMenu() {
+    showPage('mainMenu');
+    updateMainMenu();
+  }
+
+  function showGame() {
+    showPage('gamePage');
+  }
+
+  // Zone configuration with Italian data from the dataset
+  const zones = [
+    {
+      city: "Roma",
+      timer: 120,
+      travelAnim: "🏛️",
+      intro: "Violazioni ovvie, facili da individuare. Scaldate i vostri istinti da Guardiano.",
+      reviews: [
+        { text: "In bagno vendevano erba a tutti.", correct: "remove", joke: "\"Erba\" = marijuana, sostanza illegale." },
+        { text: "Il cameriere è stato uno str***o, maleducato e offensivo.", correct: "remove", joke: "Linguaggio volgare diretto verso una persona." },
+        { text: "Camera pulita e letto comodo.", correct: "retain", joke: "Nessuna violazione." },
+        { text: "Qui è pieno di ragazze a pagamento all'ingresso.", correct: "remove", joke: "Riferimento esplicito alla prostituzione." },
+        { text: "Colazione ottima, cappuccino perfetto.", correct: "retain", joke: "Nessuna violazione." },
+        { text: "Il receptionist mi ha detto che i neri qui non sono benvenuti.", correct: "remove", joke: "Linguaggio discriminatorio basato sull'etnia." },
+        { text: "Vista mare spettacolare.", correct: "retain", joke: "Nessuna violazione." },
+        { text: "Piscina pulita e acqua calda.", correct: "retain", joke: "Nessuna violazione." },
+        { text: "Mi hanno offerto coca al bar.", correct: "remove", joke: "\"Coca\" = cocaina, sostanza illegale." },
+        { text: "Personale gentile e disponibile.", correct: "retain", joke: "Nessuna violazione." }
+      ]
+    },
+    {
+      city: "Milano",
+      timer: 110,
+      travelAnim: "🏢",
+      intro: "Violazioni chiare ma slang più sottile. Tenete i sensi acuti.",
+      reviews: [
+        { text: "Festa pazzesca, tutti sul bianco fino all'alba.", correct: "remove", joke: "\"Bianco\" = cocaina." },
+        { text: "Hotel un po' datato ma accogliente.", correct: "retain", joke: "Nessuna violazione." },
+        { text: "Alla reception mi hanno detto che i gay non li accettiamo.", correct: "remove", joke: "Discriminazione basata sull'orientamento sessuale." },
+        { text: "Cornetti caldi e fragranti.", correct: "retain", joke: "Nessuna violazione." },
+        { text: "Musica alta fino a tardi, ma divertente.", correct: "retain", joke: "Nessuna violazione." },
+        { text: "Sulla terrazza offrivano spinelli.", correct: "remove", joke: "\"Spinello\" = sigaretta con marijuana." },
+        { text: "Camera spaziosa e silenziosa.", correct: "retain", joke: "Nessuna violazione." },
+        { text: "Al bar chiedevano zucchero per caricarsi.", correct: "remove", joke: "\"Zucchero\" = MDMA/amfetamina." },
+        { text: "Staff sorridente.", correct: "retain", joke: "Nessuna violazione." },
+        { text: "Arredamento elegante.", correct: "retain", joke: "Nessuna violazione." }
+      ]
+    },
+    {
+      city: "Napoli",
+      timer: 100,
+      travelAnim: "🍕",
+      intro: "Casi misti, slang più insidioso. Entrate nelle viscere del Guardiano.",
+      reviews: [
+        { text: "Qui puoi volare tutta la notte, che sballo.", correct: "remove", joke: "\"Volare\" = essere sotto effetto di droga." },
+        { text: "Pulizia impeccabile.", correct: "retain", joke: "Nessuna violazione." },
+        { text: "Il cameriere ha detto che gli africani qui non li serviamo.", correct: "remove", joke: "Discriminazione razziale." },
+        { text: "Colazione varia e abbondante.", correct: "retain", joke: "Nessuna violazione." },
+        { text: "Dopo mezzanotte diventa un mercato nero.", correct: "remove", joke: "Riferimento a commercio illegale." },
+        { text: "Al bar servivano tè verde speciale.", correct: "remove", joke: "\"Tè verde\" = marijuana." },
+        { text: "Personale cordiale.", correct: "retain", joke: "Nessuna violazione." },
+        { text: "Clienti parlavano di fare un viaggio senza muoversi.", correct: "remove", joke: "\"Fare un viaggio\" = assumere droghe psichedeliche." },
+        { text: "Camera luminosa e accogliente.", correct: "retain", joke: "Nessuna violazione." },
+        { text: "Prezzi onesti.", correct: "retain", joke: "Nessuna violazione." }
+      ]
+    },
+    {
+      city: "Firenze",
+      timer: 95,
+      travelAnim: "🎨",
+      intro: "Significati nascosti o borderline. Violazioni nascoste in bella vista.",
+      reviews: [
+        { text: "In spiaggia molti pescavano di notte.", correct: "remove", joke: "\"Pescare\" = cercare clienti per prostituzione." },
+        { text: "Bagno piccolo ma funzionale.", correct: "retain", joke: "Nessuna violazione." },
+        { text: "Alla reception mi hanno detto che donne sole non le prendiamo.", correct: "remove", joke: "Discriminazione di genere." },
+        { text: "A colazione chiedevano marmellata speciale.", correct: "remove", joke: "\"Marmellata speciale\" = miscela di droga." },
+        { text: "Atmosfera tranquilla.", correct: "retain", joke: "Nessuna violazione." },
+        { text: "Odore strano di sigaretta vicino alla piscina.", correct: "remove", joke: "Riferimento implicito a marijuana." },
+        { text: "Staff educato.", correct: "retain", joke: "Nessuna violazione." },
+        { text: "In città cercavano il fiore di notte.", correct: "remove", joke: "\"Fiore di notte\" = ecstasy." },
+        { text: "Camera ampia.", correct: "retain", joke: "Nessuna violazione." },
+        { text: "Dolci fatti in casa buonissimi.", correct: "retain", joke: "Nessuna violazione." }
+      ]
+    },
+    {
+      city: "Venezia",
+      timer: 90,
+      travelAnim: "🚤",
+      intro: "Molto ingannevoli. Questo è il Livello Maestro.",
+      reviews: [
+        { text: "Abbiamo raccolto stelle tutta la sera.", correct: "remove", joke: "\"Raccogliere stelle\" = assumere ecstasy." },
+        { text: "Camera confortevole.", correct: "retain", joke: "Nessuna violazione." },
+        { text: "Alla reception hanno detto che gli stranieri non sono graditi.", correct: "remove", joke: "Discriminazione basata sulla nazionalità." },
+        { text: "Al bar chiedevano polvere magica.", correct: "remove", joke: "\"Polvere magica\" = cocaina." },
+        { text: "Atmosfera accogliente.", correct: "retain", joke: "Nessuna violazione." },
+        { text: "Mi hanno offerto cioccolato in bustine.", correct: "remove", joke: "\"Cioccolato\" = hashish." },
+        { text: "Personale attento.", correct: "retain", joke: "Nessuna violazione." },
+        { text: "Dopo mezzanotte c'è un menu segreto.", correct: "remove", joke: "\"Menu segreto\" = offerta di servizi/beni illegali." },
+        { text: "Camera silenziosa, letto comodo.", correct: "retain", joke: "Nessuna violazione." },
+        { text: "Prezzi ragionevoli.", correct: "retain", joke: "Nessuna violazione." }
+      ]
+    }
+  ];
+
+  let zoneIdx = 0;
+  let reviewIdx = 0;
+  let lives = 4;
+  let score = 0;
+  let timerId = null;
+  let remaining = 0;
+  let zoneCorrect = 0;
+  const passThreshold = 0.7;
+
+  // Game state management
+  let gameState = {
+    completedCities: JSON.parse(localStorage.getItem('completedCities_it') || '[]'),
+  };
+
+  const cityName = document.getElementById('cityName');
+  const progressDom = document.getElementById('progress');
+  const livesDom = document.getElementById('lives');
+  const timerDom = document.getElementById('timer');
+  const scoreDom = document.getElementById('score');
+  const heroAvatar = document.getElementById('heroAvatar');
+  const narrative = document.getElementById('narrative');
+  const reviewText = document.getElementById('reviewText');
+  const retainBtn = document.getElementById('retainBtn');
+  const removeBtn = document.getElementById('removeBtn');
+  const startBtn = document.getElementById('startBtn');
+  const feedback = document.getElementById('feedback');
+  const zoneEnd = document.getElementById('zoneEnd');
+  const transition = document.getElementById('transition');
+  const transitionAnim = document.getElementById('travelAnim');
+  const transitionTitle = document.getElementById('transitionTitle');
+  const badge = document.getElementById('badge');
+  const travelHint = document.getElementById('travelHint');
+  const continueBtn = document.getElementById('continueBtn');
+  const cityCheckpoints = document.getElementById('cityCheckpoints');
+  const progressFill = document.getElementById('progressFill');
+  const citiesGrid = document.getElementById('citiesGrid');
+
+  function saveProgress() {
+    localStorage.setItem('completedCities_it', JSON.stringify(gameState.completedCities));
+  }
+
+  function isCityUnlocked(cityIndex) {
+    if (cityIndex === 0) return true; // Rome is always unlocked
+    return gameState.completedCities.includes(cityIndex - 1);
+  }
+
+  function markCityCompleted(cityIndex) {
+    if (!gameState.completedCities.includes(cityIndex)) {
+      gameState.completedCities.push(cityIndex);
+      saveProgress();
+    }
+  }
+
+  function getNextUnlockedCity() {
+    for (let i = 0; i < zones.length; i++) {
+      if (isCityUnlocked(i) && !gameState.completedCities.includes(i)) {
+        return i;
+      }
+    }
+    return gameState.completedCities.length > 0 ? gameState.completedCities[gameState.completedCities.length - 1] : 0;
+  }
+
+  function updateMainMenu() {
+    // Update progress bar
+    const completionPercent = (gameState.completedCities.length / zones.length) * 100;
+    progressFill.style.width = completionPercent + '%';
+
+    // Generate city cards
+    citiesGrid.innerHTML = zones.map((zone, index) => {
+      const isUnlocked = isCityUnlocked(index);
+      const isCompleted = gameState.completedCities.includes(index);
+
+      let cardClass = 'city-card';
+      let badge = '';
+      let unlockText = '';
+
+      if (isCompleted) {
+        cardClass += ' completed';
+        badge = '<div class="completion-badge">✅</div>';
+      } else if (!isUnlocked) {
+        cardClass += ' locked';
+        badge = '<div class="lock-overlay">🔒</div>';
+        unlockText = '<div class="unlock-hint">Completa la città precedente per sbloccare</div>';
+      } else {
+        cardClass += ' unlocked';
+      }
+
+      const clickHandler = isUnlocked ? `onclick="selectCity(${index})"` : '';
+
+      return `
+        <div class="${cardClass}" ${clickHandler}>
+          ${badge}
+          <div class="city-icon">${zone.travelAnim}</div>
+          <div class="city-name">${zone.city}</div>
+          <div class="city-difficulty">${zone.timer}s • Zona ${index + 1}</div>
+          ${unlockText}
+        </div>
+      `;
+    }).join('');
+  }
+
+  function continueProgress() {
+    const nextCity = getNextUnlockedCity();
+    selectCity(nextCity);
+  }
+
+  function selectCity(cityIndex) {
+    if (!isCityUnlocked(cityIndex)) return;
+
+    zoneIdx = cityIndex;
+    showGame();
+    showTransition(
+      `Atterraggio a ${zones[cityIndex].city}`,
+      zones[cityIndex].city,
+      zones[cityIndex].travelAnim,
+      zones[cityIndex].intro,
+      `Entra a ${zones[cityIndex].city}`
+    );
+  }
+
+  function renderCheckpoints(currentIdx) {
+    cityCheckpoints.innerHTML = zones.map((z, idx) =>
+      `<span class="${idx===currentIdx?'active':(gameState.completedCities.includes(idx)?'completed':'')}">${z.city}</span>${idx<zones.length-1?'<span class="arrow">→</span>':''}`
+    ).join('');
+  }
+
+  function enablePlay(enable){
+    [retainBtn, removeBtn].forEach(b=>{
+      b.disabled = !enable;
+      b.classList.toggle('disabled', !enable);
+    });
+  }
+
+  function loadReview(){
+    const z = zones[zoneIdx];
+    const total = z.reviews.length;
+    if(reviewIdx >= total){
+      endZone();
+      return;
+    }
+    const item = z.reviews[reviewIdx];
+    reviewText.textContent = item.text;
+    progressDom.textContent = `${reviewIdx+1}/${total}`;
+    feedback.innerHTML = '';
+    zoneEnd.textContent = '';
+    enablePlay(true);
+  }
+
+  function playBurst(good=true){
+    // Simple color animation
+    if (good) {
+      heroAvatar.style.background = 'linear-gradient(135deg, var(--ok), #059669)';
+    } else {
+      heroAvatar.style.background = 'linear-gradient(135deg, var(--bad), #dc2626)';
+    }
+    setTimeout(() => {
+      heroAvatar.style.background = 'linear-gradient(135deg, var(--brand1), var(--brand2))';
+    }, 800);
+  }
+
+  function checkAnswer(choice){
+    enablePlay(false);
+    const z = zones[zoneIdx];
+    const cur = z.reviews[reviewIdx];
+    const correct = cur.correct === choice;
+
+    if(correct){
+      score++;
+      zoneCorrect++;
+      feedback.innerHTML = `✅ <span class="good">Corretto.</span> ${cur.joke}`;
+      playBurst(true);
+    }else{
+      lives--;
+      feedback.innerHTML = `❌ <span class="bad">Sbagliato.</span> ${cur.joke}`;
+      playBurst(false);
+    }
+
+    scoreDom.textContent = score;
+    livesDom.textContent = "❤".repeat(Math.max(0,lives));
+    reviewIdx++;
+
+    if(lives <= 0){
+      setTimeout(()=> endZone(true), 900);
+      return;
+    }
+    setTimeout(loadReview, 900);
+  }
+
+  function endZone(outOfLives=false){
+    clearInterval(timerId);
+    enablePlay(false);
+    const z = zones[zoneIdx];
+    const total = z.reviews.length;
+    const needed = Math.ceil(passThreshold * total);
+    const passed = zoneCorrect >= needed && !outOfLives;
+
+    if(passed){
+      markCityCompleted(zoneIdx);
+      zoneEnd.textContent = `🏅 Zona completata: ${zoneCorrect}/${total} corrette (necessarie ${needed}). Sali sul prossimo volo!`;
+      const next = zones[zoneIdx+1];
+      if(next){
+        setTimeout(()=>{
+          showTransition(
+            `Partenza da ${z.city} → Arrivo a ${next.city}`,
+            next.city,
+            next.travelAnim,
+            `Nuova città, nuovo slang. ${next.intro}`,
+            "Entra nella prossima città"
+          );
+        }, 700);
+      }else{
+        setTimeout(()=>{
+          showTransition(
+            `Corona da Maestro Conquistata`,
+            "Guardiano Globale",
+            "👑",
+            "Hai completato tutte le città con coraggio, arguzia e giudizio solido come una roccia.",
+            "Celebra & Ricomincia"
+          );
+        }, 700);
+      }
+    }else{
+      zoneEnd.textContent = `💥 Zona fallita: ${zoneCorrect}/${total} corrette (necessarie ${needed}). ` +
+        (outOfLives ? "Hai finito le vite." : "Tempo/precisione insufficienti.") + " Riprova.";
+      setTimeout(()=>{
+        showTransition(
+          `Riprova ${z.city}`,
+          z.city,
+          "💀",
+          "Respira profondamente. Umorismo ricaricato. Regole pronte. Riparti.",
+          "Riprova zona"
+        );
+      }, 700);
+    }
+  }
+
+  function startZone(idx){
+    zoneIdx = idx;
+    reviewIdx = 0;
+    lives = 4;
+    zoneCorrect = 0;
+
+    renderCheckpoints(zoneIdx);
+
+    const z = zones[zoneIdx];
+    cityName.textContent = z.city;
+    narrative.textContent = z.intro;
+    livesDom.textContent = "❤❤❤❤";
+    scoreDom.textContent = score;
+    progressDom.textContent = `0/${z.reviews.length}`;
+    reviewText.textContent = "Caricamento recensioni...";
+    zoneEnd.textContent = "";
+    enablePlay(true);
+
+    // Update hero avatar emoji
+    heroAvatar.textContent = z.travelAnim;
+
+    remaining = z.timer;
+    timerDom.textContent = remaining + "s";
+    clearInterval(timerId);
+    timerId = setInterval(()=>{
+      remaining--;
+      timerDom.textContent = remaining + "s";
+      if(remaining <= 0){
+        clearInterval(timerId);
+        enablePlay(false);
+        zoneEnd.textContent = "⏰ Tempo scaduto! Elementi non risposti automaticamente marcati come sbagliati.";
+        setTimeout(()=> endZone(), 900);
+      }
+    }, 1000);
+
+    loadReview();
+  }
+
+  function showTransition(title, cityLabel, animEmoji, hint, buttonText="Continua"){
+    transitionTitle.textContent = title;
+    badge.textContent = `Zona • ${cityLabel}`;
+    travelHint.textContent = hint;
+    transitionAnim.textContent = animEmoji;
+    continueBtn.textContent = buttonText;
+    transition.style.display = 'flex';
+  }
+
+  function hideTransition(){
+    transition.style.display = 'none';
+  }
+
+  // Start/restart game
+  startBtn.addEventListener('click', ()=>{
+    score = 0;
+    scoreDom.textContent = score;
+    showTransition(
+      "Atterraggio a Roma",
+      "Roma",
+      zones[0].travelAnim,
+      zones[0].intro,
+      "Entra a Roma"
+    );
+  });
+
+  // Continue button logic
+  continueBtn.addEventListener('click', ()=>{
+    hideTransition();
+    const title = transitionTitle.textContent || "";
+    if(title.startsWith("Atterraggio a Roma") || title.startsWith("Benvenuti a Roma") || title.includes("Entra a Roma")){
+      startZone(0);
+      return;
+    }
+    if(title.startsWith("Riprova")){
+      startZone(zoneIdx);
+      return;
+    }
+    if(title.startsWith("Partenza da")){
+      startZone(zoneIdx+1);
+      return;
+    }
+    if(title.startsWith("Corona da Maestro")){
+      zoneIdx = 0; score = 0;
+      scoreDom.textContent = score;
+      showMainMenu();
+      return;
+    }
+    startZone(zoneIdx);
+  });
+
+  retainBtn.addEventListener('click', ()=> checkAnswer("retain"));
+  removeBtn.addEventListener('click', ()=> checkAnswer("remove"));
+
+  window.addEventListener('keydown', (e)=>{
+    if(currentPage !== 'gamePage' || retainBtn.disabled) return;
+    if(e.key.toLowerCase()==='a') checkAnswer("retain");
+    if(e.key.toLowerCase()==='l') checkAnswer("remove");
+  });
+
+  // Initialize
+  updateMainMenu();
+  renderCheckpoints(zoneIdx);
+</script>
+</body>
+</html>

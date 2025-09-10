@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<title>İnceleme Muhafızı – Türkiye Sürümü</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root{
+    --brand1:#3b82f6;
+    --brand2:#22d3ee;
+    --accent:#ff7e5f;
+    --bg1:#0f172a;
+    --bg2:#1e293b;
+    --card:#0b1222bb;
+    --ok:#10b981;
+    --bad:#ef4444;
+    --text:#e5e7eb;
+    --muted:#9ca3af;
+    --active:#fff;
+    --active-bg:#3b82f6;
+    --locked:#4b5563;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    color:var(--text);
+    background:
+      radial-gradient(1200px 600px at -10% -10%, rgba(34,211,238,0.12), transparent 60%),
+      radial-gradient(1000px 800px at 110% 10%, rgba(59,130,246,0.12), transparent 60%),
+      linear-gradient(160deg, #0b1020 0%, #111827 60%, #0b1222 100%);
+    min-height:100vh;
+  }
+
+  /* Page Management */
+  .page {
+    display: none;
+  }
+  .page.active {
+    display: block;
+  }
+
+  /* Main Menu Styles */
+  .main-menu {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .game-title {
+    font-size: 3rem;
+    font-weight: 900;
+    background: linear-gradient(90deg, var(--brand1), var(--brand2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 10px;
+    text-shadow: 0 4px 12px rgba(59,130,246,0.3);
+  }
+
+  .game-subtitle {
+    font-size: 1.2rem;
+    color: var(--muted);
+    margin-bottom: 40px;
+    font-weight: 500;
+  }
+
+  .progress-bar {
+    width: 100%;
+    max-width: 600px;
+    height: 8px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    margin-bottom: 30px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--brand1), var(--brand2));
+    border-radius: 10px;
+    transition: width 0.5s ease;
+    width: 0%;
+  }
+
+  .cities-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 20px;
+    max-width: 800px;
+    width: 100%;
+    margin-bottom: 30px;
+  }
+
+  .city-card {
+    background: linear-gradient(180deg, rgba(16,24,40,0.7), rgba(9,13,24,0.65));
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 20px;
+    padding: 25px 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    min-height: 180px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .city-card.unlocked:hover {
+    transform: translateY(-5px);
+    border-color: rgba(59,130,246,0.3);
+    box-shadow: 0 15px 40px rgba(59,130,246,0.15);
+  }
+
+  .city-card.locked {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background: linear-gradient(180deg, rgba(8,12,20,0.7), rgba(4,6,12,0.65));
+  }
+
+  .city-card.completed {
+    border-color: rgba(16,185,129,0.4);
+    background: linear-gradient(180deg, rgba(16,24,40,0.7), rgba(5,15,10,0.65));
+  }
+
+  .city-icon {
+    font-size: 3.5rem;
+    width: 80px;
+    height: 80px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--brand1), var(--brand2));
+    margin-bottom: 5px;
+    animation: float 3s ease-in-out infinite;
+    position: relative;
+  }
+
+  .city-card.locked .city-icon {
+    background: linear-gradient(135deg, var(--locked), #374151);
+    animation: none;
+  }
+
+  .city-card.completed .city-icon {
+    background: linear-gradient(135deg, var(--ok), #059669);
+  }
+
+  .city-card:nth-child(1) .city-icon { animation-delay: -0.2s; }
+  .city-card:nth-child(2) .city-icon { animation-delay: -0.4s; }
+  .city-card:nth-child(3) .city-icon { animation-delay: -0.6s; }
+  .city-card:nth-child(4) .city-icon { animation-delay: -0.8s; }
+  .city-card:nth-child(5) .city-icon { animation-delay: -1.0s; }
+
+  .lock-overlay {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 1.5rem;
+    color: var(--locked);
+  }
+
+  .completion-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 1.5rem;
+    color: var(--ok);
+  }
+
+  .city-name {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: 0.5px;
+  }
+
+  .city-card.locked .city-name {
+    color: var(--locked);
+  }
+
+  .city-difficulty {
+    font-size: 0.9rem;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .city-card.locked .city-difficulty {
+    color: var(--locked);
+  }
+
+  .menu-buttons {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  /* Button Styles */
+  button {
+    border: none;
+    cursor: pointer;
+    border-radius: 12px;
+    padding: 15px 25px;
+    font-weight: 700;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    color: #0a1020;
+  }
+
+  .btn-primary {
+    background: linear-gradient(90deg, var(--brand2), var(--brand1));
+    color: #0b1020;
+  }
+
+  .btn-secondary {
+    background: linear-gradient(90deg, #fbbf24, #f59e0b);
+    color: #0b1020;
+  }
+
+  .btn-start {
+    background: linear-gradient(90deg, #22d3ee, #3b82f6);
+    color: #0b1020;
+  }
+
+  .btn-retain {
+    background: linear-gradient(90deg, #34d399, #10b981);
+  }
+
+  .btn-remove {
+    background: linear-gradient(90deg, #fb7185, #ef4444);
+  }
+
+  .btn-next {
+    background: linear-gradient(90deg, #fde68a, #fbbf24);
+  }
+
+  button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+  }
+
+  button:active {
+    transform: translateY(1px);
+  }
+
+  .disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    filter: grayscale(0.2);
+  }
+
+  /* Game Page Styles */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    backdrop-filter: blur(6px);
+    background: linear-gradient(90deg, rgba(34,211,238,0.08), rgba(59,130,246,0.08));
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+
+  .brand .title {
+    font-size: 1.1rem;
+  }
+
+  .tag {
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .city-checkpoints {
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+  }
+
+  .city-checkpoints .active {
+    font-weight: bold;
+    color: var(--active);
+    background: linear-gradient(90deg, var(--brand1), var(--brand2));
+    border-radius: 6px;
+    padding: 2px 8px;
+    box-shadow: 0 2px 8px rgba(59,130,246,0.12);
+    letter-spacing: 0.5px;
+  }
+
+  .city-checkpoints .completed {
+    color: var(--ok);
+    background: linear-gradient(90deg, var(--ok), #059669);
+    border-radius: 6px;
+    padding: 2px 8px;
+  }
+
+  .city-checkpoints .arrow {
+    color: var(--muted);
+    font-weight: normal;
+    padding: 0 2px;
+  }
+
+  .container {
+    max-width: 980px;
+    margin: 20px auto;
+    padding: 0 16px;
+  }
+
+  .game {
+    background: linear-gradient(180deg, rgba(16,24,40,0.7), rgba(9,13,24,0.65));
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+  }
+
+  .hud {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 10px;
+    align-items: center;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: linear-gradient(90deg, rgba(34,211,238,0.06), rgba(59,130,246,0.06));
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .city {
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #c7d2fe;
+  }
+
+  .stats {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    justify-content: flex-end;
+    font-size: 0.95rem;
+  }
+
+  .stat {
+    color: var(--muted);
+  }
+
+  .stat b {
+    color: var(--text);
+  }
+
+  .lives {
+    letter-spacing: 1px;
+  }
+
+  .timer {
+    color: #fde68a;
+  }
+
+  .score {
+    color: #a7f3d0;
+  }
+
+  .stage {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 18px;
+    margin-top: 18px;
+  }
+
+  .panel {
+    background: linear-gradient(180deg, rgba(18,27,46,0.7), rgba(10,16,30,0.55));
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 16px;
+    padding: 16px;
+  }
+
+  .panel h3 {
+    margin: 0 0 10px;
+    font-size: 1rem;
+    color: #cbd5e1;
+    letter-spacing: 0.3px;
+  }
+
+  .hero-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .narrative {
+    font-size: 0.95rem;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+
+  .review-box {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .review-text {
+    min-height: 84px;
+    font-size: 1.15rem;
+    line-height: 1.45;
+    padding: 14px;
+    border-radius: 12px;
+    border: 1px dashed rgba(255,255,255,0.12);
+    background: linear-gradient(180deg, rgba(22,31,52,0.6), rgba(10,16,30,0.45));
+  }
+
+  .btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .feedback {
+    min-height: 56px;
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 1rem;
+    background: linear-gradient(180deg, rgba(18,27,46,0.55), rgba(10,16,30,0.45));
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .good {
+    color: #86efac;
+  }
+
+  .bad {
+    color: #fca5a5;
+  }
+
+  .zone-end {
+    margin-top: 12px;
+    font-size: 0.95rem;
+    color: #c7d2fe;
+  }
+
+  .transition {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9;
+    background: radial-gradient(1000px 600px at 50% -10%, rgba(34,211,238,0.14), transparent 60%),
+                linear-gradient(180deg, rgba(3,7,18,0.95), rgba(2,6,23,0.98));
+    animation: fadeIn 0.35s ease both;
+    text-align: center;
+    padding: 20px;
+  }
+
+  .transition .card {
+    max-width: 760px;
+    width: 100%;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 18px;
+    padding: 18px;
+    background: linear-gradient(180deg, rgba(16,24,40,0.6), rgba(10,16,30,0.5));
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+
+  .transition h2 {
+    margin: 8px 0 6px;
+    font-size: 1.4rem;
+  }
+
+  .transition p {
+    margin: 0;
+    color: var(--muted);
+  }
+
+  .city-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: linear-gradient(90deg, rgba(34,211,238,0.12), rgba(59,130,246,0.12));
+    color: #c7d2fe;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    margin-top: 6px;
+  }
+
+  .travel-hint {
+    color: #a7f3d0;
+    margin: 8px 0 14px;
+    font-size: 0.95rem;
+  }
+
+  .footer-note {
+    color: #94a3b8;
+    font-size: 0.85rem;
+    margin-top: 6px;
+  }
+
+  /* Animations */
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+
+  .hero-avatar {
+    width: 220px;
+    height: 220px;
+    background: linear-gradient(135deg, var(--brand1), var(--brand2));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4rem;
+    animation: pulse 2s ease-in-out infinite;
+    margin: 10px 0;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+
+  .travel-animation {
+    width: 100px;
+    height: 100px;
+    background: linear-gradient(135deg, var(--accent), #fbbf24);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    animation: spin 2s linear infinite;
+    margin: 20px auto;
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .unlock-hint {
+    position: absolute;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.8rem;
+    color: var(--locked);
+    text-align: center;
+  }
+
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .game-title {
+      font-size: 2.2rem;
+    }
+
+    .cities-grid {
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+    }
+
+    .city-card {
+      padding: 20px 10px;
+      min-height: 150px;
+    }
+
+    .city-icon {
+      font-size: 2.8rem;
+      width: 70px;
+      height: 70px;
+    }
+
+    .stage {
+      grid-template-columns: 1fr;
+      gap: 15px;
+    }
+
+    .menu-buttons {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    button {
+      padding: 12px 20px;
+      min-width: 200px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- Main Menu Page -->
+<div id="mainMenu" class="page active">
+  <div class="main-menu">
+    <h1 class="game-title">🛡️ İnceleme Muhafızı</h1>
+    <p class="game-subtitle">Eğlenceli, cesur ve adil içerik moderasyonu</p>
+
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+
+    <div class="cities-grid" id="citiesGrid">
+      <!-- Cities will be populated by JavaScript -->
+    </div>
+
+    <div class="menu-buttons">
+      <button class="btn-primary" onclick="continueProgress()">🚀 Sonraki Şehir</button>
+    </div>
+  </div>
+</div>
+
+<!-- Game Page -->
+<div id="gamePage" class="page">
+  <header>
+    <div class="brand">
+      <div class="shield-icon" style="width: 38px; height: 38px; background: linear-gradient(135deg, var(--brand1), var(--brand2)); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">🛡️</div>
+      <div>
+        <div class="title">🛡️ İnceleme Muhafızı</div>
+        <div class="tag">Eğlenceli, cesur ve adil.</div>
+      </div>
+    </div>
+    <div class="city-checkpoints" id="cityCheckpoints"></div>
+  </header>
+
+  <div class="container">
+    <div class="game">
+      <div class="hud">
+        <div class="city" id="cityName">Başlat'a Basın</div>
+        <div class="stat"><b id="progress">0/0</b> yorum</div>
+        <div class="stats">
+          <div class="stat lives">Can: <b id="lives">—</b></div>
+          <div class="stat timer">Süre: <b id="timer">—</b></div>
+          <div class="stat score">Puan: <b id="score">0</b></div>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="panel hero-box">
+          <h3>Avatarınız</h3>
+          <div class="hero-avatar" id="heroAvatar">🛡️</div>
+          <div class="narrative" id="narrative">Uluslararası İnceleme Muhafızı olun. Görevlendirme için Başlat'a basın.</div>
+        </div>
+
+        <div class="panel review-box">
+          <h3>Mevcut yorum</h3>
+          <div class="review-text" id="reviewText">Hazır olduğunuzda hazırım. Zekânız kılıcınız; kurallar kalkanınız.</div>
+          <div class="btns">
+            <button class="btn-retain disabled" id="retainBtn" disabled>✅ Tut</button>
+            <button class="btn-remove disabled" id="removeBtn" disabled>❌ Kaldır</button>
+            <button class="btn-start" id="startBtn">🚀 Oyunu Başlat</button>
+          </div>
+          <div class="feedback" id="feedback"></div>
+          <div class="zone-end" id="zoneEnd"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Transition Overlay -->
+<div class="transition" id="transition">
+  <div class="card">
+    <div class="travel-animation" id="travelAnim">✈️</div>
+    <h2 id="transitionTitle">İstanbul'a Hoş Geldiniz</h2>
+    <div class="city-badge" id="badge">Bölge • İstanbul</div>
+    <p class="travel-hint" id="travelHint">Açık ihlaller, tespit etmesi kolay. Muhafız içgüdülerinizi ısıtın.</p>
+    <button class="btn-next" id="continueBtn">Devam Et</button>
+    <div class="footer-note">İpucu: Mizah yardımcı olur, ama kurallar hükmederde olmalı.</div>
+  </div>
+</div>
+
+<script>
+  // Page Management
+  let currentPage = 'mainMenu';
+
+  function showPage(pageId) {
+    document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+    document.getElementById(pageId).classList.add('active');
+    currentPage = pageId;
+  }
+
+  function showMainMenu() {
+    showPage('mainMenu');
+    updateMainMenu();
+  }
+
+  function showGame() {
+    showPage('gamePage');
+  }
+
+  // Zone configuration with Turkish data from the dataset
+  const zones = [
+    {
+      city: "İstanbul",
+      timer: 120,
+      travelAnim: "🕌",
+      intro: "Açık ihlaller (Kolay). Muhafız içgüdülerinizi ısıtın.",
+      reviews: [
+        { text: "Bu otelde tam bir mutluluk tozu partisi vardı, sabaha kadar uçtuk!", correct: "remove", joke: "\"Mutluluk tozu\" uyuşturucu (kokain/MDMA) anlamında kullanılmış, yasa dışı madde kullanımı teşviki." },
+        { text: "Resepsiyondaki adam tam bir idiot, suratımıza kapattı telefonu!", correct: "remove", joke: "Hakaret ve küfür içeren dil kullanımı, topluluk kurallarına aykırı." },
+        { text: "Sahilde bira içmek harikaydı, gün batımı mükemmeldi.", correct: "retain", joke: "Yasal alkol tüketimi, ihlal yok." },
+        { text: "Bu otel tam bir fuhuş yuvası, resepsiyon bile ayarlıyor!", correct: "remove", joke: "Fuhuşa katılım ve teşvik iddiası, yasa dışı faaliyet tanımı." },
+        { text: "Kahvaltı çok güzeldi, menemen efsane!", correct: "retain", joke: "Olumlu ve ilgili yorum, ihlal yok." },
+        { text: "Garson bana senin gibileri burada istemiyoruz dedi.", correct: "remove", joke: "Ayrımcı dil ve önyargı içeren ifade." },
+        { text: "Odalar tertemizdi, havlular mis gibi kokuyordu.", correct: "retain", joke: "İhlal yok." },
+        { text: "Bu otelde bomba gibi bir gece geçirdik!", correct: "retain", joke: "Burada mecazi anlamda kullanılmış, şiddet tehdidi yok." },
+        { text: "Sahildeki satıcı bana ot teklif etti.", correct: "remove", joke: "Yasa dışı uyuşturucu teklifine tanıklık." },
+        { text: "Personel çok yardımseverdi, tekrar geleceğim.", correct: "retain", joke: "İhlal yok." }
+      ]
+    },
+    {
+      city: "Ankara",
+      timer: 110,
+      travelAnim: "🏛️",
+      intro: "Açık ihlaller, daha ince slang. Duyularınızı keskin tutun.",
+      reviews: [
+        { text: "Gece kulübü tam bir tozlu cennet, herkes çok neşeliydi.", correct: "remove", joke: "\"Toz\" kokain anlamında, yasa dışı madde kullanımı." },
+        { text: "Odalar biraz eskiydi ama fiyatına göre iyi.", correct: "retain", joke: "İhlal yok." },
+        { text: "Resepsiyonist bana senin tipin buraya uymaz dedi.", correct: "remove", joke: "Ayrımcı ve dışlayıcı dil." },
+        { text: "Kahvaltıda peynirler bayattı.", correct: "retain", joke: "İhlal yok." },
+        { text: "Mekân ateş ediyor resmen, sabaha kadar dans!", correct: "retain", joke: "Burada mecazi anlamda, şiddet tehdidi yok." },
+        { text: "Garson bana çakmak ister misin? deyip küçük paket uzattı.", correct: "remove", joke: "Yasa dışı madde iması." },
+        { text: "Havuz çok temizdi, şezlonglar rahattı.", correct: "retain", joke: "İhlal yok." },
+        { text: "Bu otelde beyaz gül isteyen çok oluyor.", correct: "remove", joke: "\"Beyaz gül\" kokain için kullanılan kod." },
+        { text: "Personel çok güler yüzlüydü.", correct: "retain", joke: "İhlal yok." },
+        { text: "Sahildeki DJ harikaydı.", correct: "retain", joke: "İhlal yok." }
+      ]
+    },
+    {
+      city: "İzmir",
+      timer: 100,
+      travelAnim: "⛵",
+      intro: "Karışık durumlar, zorlu slang. Muhafızın bağırsaklarına giriyorsunuz.",
+      reviews: [
+        { text: "Gece boyunca şeker dağıtıldı, herkes çok enerjikti.", correct: "remove", joke: "\"Şeker\" burada MDMA/ekstazi anlamında." },
+        { text: "Odalar biraz soğuktu ama manzara güzeldi.", correct: "retain", joke: "İhlal yok." },
+        { text: "Resepsiyonist bana burada yabancılar hoş karşılanmaz dedi.", correct: "remove", joke: "Ayrımcı dil." },
+        { text: "Kahvaltıda börekler sıcaktı.", correct: "retain", joke: "İhlal yok." },
+        { text: "Mekân tam bir karanlık pazar gibi, her şey satılıyor.", correct: "remove", joke: "Yasa dışı ürün ticareti iması." },
+        { text: "Havuz başında yeşil çay isteyenler vardı.", correct: "remove", joke: "\"Yeşil çay\" marihuana için kullanılan kod." },
+        { text: "Personel çok ilgiliydi.", correct: "retain", joke: "İhlal yok." },
+        { text: "Sahilde uçmak isteyenler vardı.", correct: "remove", joke: "\"Uçmak\" uyuşturucu etkisi altında olmayı ifade ediyor." },
+        { text: "Odalar sessizdi, uyumak kolaydı.", correct: "retain", joke: "İhlal yok." },
+        { text: "Restoran fiyatları uygundu.", correct: "retain", joke: "İhlal yok." }
+      ]
+    },
+    {
+      city: "Antalya",
+      timer: 95,
+      travelAnim: "🏖️",
+      intro: "Gizli/sınırda anlamlar. İhlaller gözle görülür yerde gizleniyor.",
+      reviews: [
+        { text: "Gece kulübünde balık tutmak isteyenler vardı.", correct: "remove", joke: "\"Balık tutmak\" fuhuş müşteri aramak anlamında." },
+        { text: "Odalar biraz nemliydi.", correct: "retain", joke: "İhlal yok." },
+        { text: "Resepsiyonist bana senin rengin buraya uymaz dedi.", correct: "remove", joke: "Irkçı/ayrımcı ifade." },
+        { text: "Kahvaltıda özel reçel isteyenler vardı.", correct: "remove", joke: "\"Özel reçel\" uyuşturucu karışımı anlamında." },
+        { text: "Mekân çok sakindi.", correct: "retain", joke: "İhlal yok." },
+        { text: "Havuz başında sigara isteyenler vardı, ama kokusu farklıydı.", correct: "remove", joke: "Yasa dışı madde iması (marihuana)." },
+        { text: "Personel çok kibardı.", correct: "retain", joke: "İhlal yok." },
+        { text: "Sahilde gece çiçeği isteyenler vardı.", correct: "remove", joke: "\"Gece çiçeği\" ecstasy için kullanılan kod." },
+        { text: "Odalar genişti.", correct: "retain", joke: "İhlal yok." },
+        { text: "Restoranın tatlıları güzeldi.", correct: "retain", joke: "İhlal yok." }
+      ]
+    },
+    {
+      city: "Bursa",
+      timer: 90,
+      travelAnim: "🏔️",
+      intro: "Çok aldatıcı. Bu Usta Seviyesi.",
+      reviews: [
+        { text: "Gece boyunca yıldız topladık, herkes çok mutlu görünüyordu.", correct: "remove", joke: "\"Yıldız toplamak\" ecstasy kullanmak anlamında." },
+        { text: "Odalar çok rahattı.", correct: "retain", joke: "İhlal yok." },
+        { text: "Resepsiyonist bana senin gibi misafirleri sevmeyiz dedi.", correct: "remove", joke: "Ayrımcı dil." },
+        { text: "Kahvaltıda özel toz isteyenler vardı.", correct: "remove", joke: "\"Özel toz\" kokain anlamında." },
+        { text: "Mekân çok canlıydı.", correct: "retain", joke: "İhlal yok." },
+        { text: "Havuz başında çikolata isteyenler vardı, ama paketleri garipti.", correct: "remove", joke: "\"Çikolata\" uyuşturucu kodu olarak kullanılmış." },
+        { text: "Personel çok yardımseverdi.", correct: "retain", joke: "İhlal yok." },
+        { text: "Sahilde gizli menü isteyenler vardı.", correct: "remove", joke: "\"Gizli menü\" yasa dışı ürün/hizmet iması." },
+        { text: "Odalar sessizdi.", correct: "retain", joke: "İhlal yok." },
+        { text: "Restoran fiyatları uygundu.", correct: "retain", joke: "İhlal yok." }
+      ]
+    }
+  ];
+
+  let zoneIdx = 0;
+  let reviewIdx = 0;
+  let lives = 4;
+  let score = 0;
+  let timerId = null;
+  let remaining = 0;
+  let zoneCorrect = 0;
+  const passThreshold = 0.7;
+
+  // Game state management
+  let gameState = {
+    completedCities: JSON.parse(localStorage.getItem('completedCities_tr') || '[]'),
+  };
+
+  const cityName = document.getElementById('cityName');
+  const progressDom = document.getElementById('progress');
+  const livesDom = document.getElementById('lives');
+  const timerDom = document.getElementById('timer');
+  const scoreDom = document.getElementById('score');
+  const heroAvatar = document.getElementById('heroAvatar');
+  const narrative = document.getElementById('narrative');
+  const reviewText = document.getElementById('reviewText');
+  const retainBtn = document.getElementById('retainBtn');
+  const removeBtn = document.getElementById('removeBtn');
+  const startBtn = document.getElementById('startBtn');
+  const feedback = document.getElementById('feedback');
+  const zoneEnd = document.getElementById('zoneEnd');
+  const transition = document.getElementById('transition');
+  const transitionAnim = document.getElementById('travelAnim');
+  const transitionTitle = document.getElementById('transitionTitle');
+  const badge = document.getElementById('badge');
+  const travelHint = document.getElementById('travelHint');
+  const continueBtn = document.getElementById('continueBtn');
+  const cityCheckpoints = document.getElementById('cityCheckpoints');
+  const progressFill = document.getElementById('progressFill');
+  const citiesGrid = document.getElementById('citiesGrid');
+
+  function saveProgress() {
+    localStorage.setItem('completedCities_tr', JSON.stringify(gameState.completedCities));
+  }
+
+  function isCityUnlocked(cityIndex) {
+    if (cityIndex === 0) return true; // Istanbul is always unlocked
+    return gameState.completedCities.includes(cityIndex - 1);
+  }
+
+  function markCityCompleted(cityIndex) {
+    if (!gameState.completedCities.includes(cityIndex)) {
+      gameState.completedCities.push(cityIndex);
+      saveProgress();
+    }
+  }
+
+  function getNextUnlockedCity() {
+    for (let i = 0; i < zones.length; i++) {
+      if (isCityUnlocked(i) && !gameState.completedCities.includes(i)) {
+        return i;
+      }
+    }
+    return gameState.completedCities.length > 0 ? gameState.completedCities[gameState.completedCities.length - 1] : 0;
+  }
+
+  function updateMainMenu() {
+    // Update progress bar
+    const completionPercent = (gameState.completedCities.length / zones.length) * 100;
+    progressFill.style.width = completionPercent + '%';
+
+    // Generate city cards
+    citiesGrid.innerHTML = zones.map((zone, index) => {
+      const isUnlocked = isCityUnlocked(index);
+      const isCompleted = gameState.completedCities.includes(index);
+
+      let cardClass = 'city-card';
+      let badge = '';
+      let unlockText = '';
+
+      if (isCompleted) {
+        cardClass += ' completed';
+        badge = '<div class="completion-badge">✅</div>';
+      } else if (!isUnlocked) {
+        cardClass += ' locked';
+        badge = '<div class="lock-overlay">🔒</div>';
+        unlockText = '<div class="unlock-hint">Kilidini açmak için önceki şehri tamamlayın</div>';
+      } else {
+        cardClass += ' unlocked';
+      }
+
+      const clickHandler = isUnlocked ? `onclick="selectCity(${index})"` : '';
+
+      return `
+        <div class="${cardClass}" ${clickHandler}>
+          ${badge}
+          <div class="city-icon">${zone.travelAnim}</div>
+          <div class="city-name">${zone.city}</div>
+          <div class="city-difficulty">${zone.timer}s • Bölge ${index + 1}</div>
+          ${unlockText}
+        </div>
+      `;
+    }).join('');
+  }
+
+  function continueProgress() {
+    const nextCity = getNextUnlockedCity();
+    selectCity(nextCity);
+  }
+
+  function selectCity(cityIndex) {
+    if (!isCityUnlocked(cityIndex)) return;
+
+    zoneIdx = cityIndex;
+    showGame();
+    showTransition(
+      `${zones[cityIndex].city}'a İniş`,
+      zones[cityIndex].city,
+      zones[cityIndex].travelAnim,
+      zones[cityIndex].intro,
+      `${zones[cityIndex].city}'a Gir`
+    );
+  }
+
+  function renderCheckpoints(currentIdx) {
+    cityCheckpoints.innerHTML = zones.map((z, idx) =>
+      `<span class="${idx===currentIdx?'active':(gameState.completedCities.includes(idx)?'completed':'')}">${z.city}</span>${idx<zones.length-1?'<span class="arrow">→</span>':''}`
+    ).join('');
+  }
+
+  function enablePlay(enable){
+    [retainBtn, removeBtn].forEach(b=>{
+      b.disabled = !enable;
+      b.classList.toggle('disabled', !enable);
+    });
+  }
+
+  function loadReview(){
+    const z = zones[zoneIdx];
+    const total = z.reviews.length;
+    if(reviewIdx >= total){
+      endZone();
+      return;
+    }
+    const item = z.reviews[reviewIdx];
+    reviewText.textContent = item.text;
+    progressDom.textContent = `${reviewIdx+1}/${total}`;
+    feedback.innerHTML = '';
+    zoneEnd.textContent = '';
+    enablePlay(true);
+  }
+
+  function playBurst(good=true){
+    // Simple color animation
+    if (good) {
+      heroAvatar.style.background = 'linear-gradient(135deg, var(--ok), #059669)';
+    } else {
+      heroAvatar.style.background = 'linear-gradient(135deg, var(--bad), #dc2626)';
+    }
+    setTimeout(() => {
+      heroAvatar.style.background = 'linear-gradient(135deg, var(--brand1), var(--brand2))';
+    }, 800);
+  }
+
+  function checkAnswer(choice){
+    enablePlay(false);
+    const z = zones[zoneIdx];
+    const cur = z.reviews[reviewIdx];
+    const correct = cur.correct === choice;
+
+    if(correct){
+      score++;
+      zoneCorrect++;
+      feedback.innerHTML = `✅ <span class="good">Doğru.</span> ${cur.joke}`;
+      playBurst(true);
+    }else{
+      lives--;
+      feedback.innerHTML = `❌ <span class="bad">Yanlış.</span> ${cur.joke}`;
+      playBurst(false);
+    }
+
+    scoreDom.textContent = score;
+    livesDom.textContent = "❤".repeat(Math.max(0,lives));
+    reviewIdx++;
+
+    if(lives <= 0){
+      setTimeout(()=> endZone(true), 900);
+      return;
+    }
+    setTimeout(loadReview, 900);
+  }
+
+  function endZone(outOfLives=false){
+    clearInterval(timerId);
+    enablePlay(false);
+    const z = zones[zoneIdx];
+    const total = z.reviews.length;
+    const needed = Math.ceil(passThreshold * total);
+    const passed = zoneCorrect >= needed && !outOfLives;
+
+    if(passed){
+      markCityCompleted(zoneIdx);
+      zoneEnd.textContent = `🏅 Bölge tamamlandı: ${zoneCorrect}/${total} doğru (gerekli ${needed}). Bir sonraki uçuşa binin!`;
+      const next = zones[zoneIdx+1];
+      if(next){
+        setTimeout(()=>{
+          showTransition(
+            `${z.city}'dan kalkış → ${next.city}'ya varış`,
+            next.city,
+            next.travelAnim,
+            `Yeni şehir, yeni slang. ${next.intro}`,
+            "Bir sonraki şehre gir"
+          );
+        }, 700);
+      }else{
+        setTimeout(()=>{
+          showTransition(
+            `Usta Tacı Kazanıldı`,
+            "Küresel Muhafız",
+            "👑",
+            "Tüm şehirleri cesaret, zeka ve kaya gibi sağlam muhakeme ile tamamladınız.",
+            "Kutla & Yeniden Başla"
+          );
+        }, 700);
+      }
+    }else{
+      zoneEnd.textContent = `💥 Bölge başarısız: ${zoneCorrect}/${total} doğru (gerekli ${needed}). ` +
+        (outOfLives ? "Canınız tükendi." : "Zaman/doğruluk yeterli değildi.") + " Tekrar deneyin.";
+      setTimeout(()=>{
+        showTransition(
+          `${z.city} Yeniden Dene`,
+          z.city,
+          "💀",
+          "Derin nefes alın. Mizah yeniden yüklendi. Kurallar hazırlandı. Tekrar gidin.",
+          "Bölgeyi yeniden dene"
+        );
+      }, 700);
+    }
+  }
+
+  function startZone(idx){
+    zoneIdx = idx;
+    reviewIdx = 0;
+    lives = 4;
+    zoneCorrect = 0;
+
+    renderCheckpoints(zoneIdx);
+
+    const z = zones[zoneIdx];
+    cityName.textContent = z.city;
+    narrative.textContent = z.intro;
+    livesDom.textContent = "❤❤❤❤";
+    scoreDom.textContent = score;
+    progressDom.textContent = `0/${z.reviews.length}`;
+    reviewText.textContent = "Yorumlar yükleniyor...";
+    zoneEnd.textContent = "";
+    enablePlay(true);
+
+    // Update hero avatar emoji
+    heroAvatar.textContent = z.travelAnim;
+
+    remaining = z.timer;
+    timerDom.textContent = remaining + "s";
+    clearInterval(timerId);
+    timerId = setInterval(()=>{
+      remaining--;
+      timerDom.textContent = remaining + "s";
+      if(remaining <= 0){
+        clearInterval(timerId);
+        enablePlay(false);
+        zoneEnd.textContent = "⏰ Süre doldu! Cevaplanmayan öğeler otomatik olarak yanlış işaretlendi.";
+        setTimeout(()=> endZone(), 900);
+      }
+    }, 1000);
+
+    loadReview();
+  }
+
+  function showTransition(title, cityLabel, animEmoji, hint, buttonText="Devam Et"){
+    transitionTitle.textContent = title;
+    badge.textContent = `Bölge • ${cityLabel}`;
+    travelHint.textContent = hint;
+    transitionAnim.textContent = animEmoji;
+    continueBtn.textContent = buttonText;
+    transition.style.display = 'flex';
+  }
+
+  function hideTransition(){
+    transition.style.display = 'none';
+  }
+
+  // Start/restart game
+  startBtn.addEventListener('click', ()=>{
+    score = 0;
+    scoreDom.textContent = score;
+    showTransition(
+      "İstanbul'a İniş",
+      "İstanbul",
+      zones[0].travelAnim,
+      zones[0].intro,
+      "İstanbul'a Gir"
+    );
+  });
+
+  // Continue button logic
+  continueBtn.addEventListener('click', ()=>{
+    hideTransition();
+    const title = transitionTitle.textContent || "";
+    if(title.startsWith("İstanbul'a İniş") || title.startsWith("İstanbul'a Hoş Geldiniz") || title.includes("İstanbul'a Gir")){
+      startZone(0);
+      return;
+    }
+    if(title.includes("Yeniden Dene")){
+      startZone(zoneIdx);
+      return;
+    }
+    if(title.includes("kalkış")){
+      startZone(zoneIdx+1);
+      return;
+    }
+    if(title.startsWith("Usta Tacı")){
+      zoneIdx = 0; score = 0;
+      scoreDom.textContent = score;
+      showMainMenu();
+      return;
+    }
+    startZone(zoneIdx);
+  });
+
+  retainBtn.addEventListener('click', ()=> checkAnswer("retain"));
+  removeBtn.addEventListener('click', ()=> checkAnswer("remove"));
+
+  window.addEventListener('keydown', (e)=>{
+    if(currentPage !== 'gamePage' || retainBtn.disabled) return;
+    if(e.key.toLowerCase()==='a') checkAnswer("retain");
+    if(e.key.toLowerCase()==='l') checkAnswer("remove");
+  });
+
+  // Initialize
+  updateMainMenu();
+  renderCheckpoints(zoneIdx);
+</script>
+</body>
+</html>

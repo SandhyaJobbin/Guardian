@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<title>Guardián de Reseñas – Edición Española</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root{
+    --brand1:#3b82f6;
+    --brand2:#22d3ee;
+    --accent:#ff7e5f;
+    --bg1:#0f172a;
+    --bg2:#1e293b;
+    --card:#0b1222bb;
+    --ok:#10b981;
+    --bad:#ef4444;
+    --text:#e5e7eb;
+    --muted:#9ca3af;
+    --active:#fff;
+    --active-bg:#3b82f6;
+    --locked:#4b5563;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    color:var(--text);
+    background:
+      radial-gradient(1200px 600px at -10% -10%, rgba(34,211,238,0.12), transparent 60%),
+      radial-gradient(1000px 800px at 110% 10%, rgba(59,130,246,0.12), transparent 60%),
+      linear-gradient(160deg, #0b1020 0%, #111827 60%, #0b1222 100%);
+    min-height:100vh;
+  }
+
+  /* Page Management */
+  .page {
+    display: none;
+  }
+  .page.active {
+    display: block;
+  }
+
+  /* Main Menu Styles */
+  .main-menu {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .game-title {
+    font-size: 3rem;
+    font-weight: 900;
+    background: linear-gradient(90deg, var(--brand1), var(--brand2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 10px;
+    text-shadow: 0 4px 12px rgba(59,130,246,0.3);
+  }
+
+  .game-subtitle {
+    font-size: 1.2rem;
+    color: var(--muted);
+    margin-bottom: 40px;
+    font-weight: 500;
+  }
+
+  .progress-bar {
+    width: 100%;
+    max-width: 600px;
+    height: 8px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    margin-bottom: 30px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--brand1), var(--brand2));
+    border-radius: 10px;
+    transition: width 0.5s ease;
+    width: 0%;
+  }
+
+  .cities-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 20px;
+    max-width: 800px;
+    width: 100%;
+    margin-bottom: 30px;
+  }
+
+  .city-card {
+    background: linear-gradient(180deg, rgba(16,24,40,0.7), rgba(9,13,24,0.65));
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 20px;
+    padding: 25px 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    min-height: 180px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .city-card.unlocked:hover {
+    transform: translateY(-5px);
+    border-color: rgba(59,130,246,0.3);
+    box-shadow: 0 15px 40px rgba(59,130,246,0.15);
+  }
+
+  .city-card.locked {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background: linear-gradient(180deg, rgba(8,12,20,0.7), rgba(4,6,12,0.65));
+  }
+
+  .city-card.completed {
+    border-color: rgba(16,185,129,0.4);
+    background: linear-gradient(180deg, rgba(16,24,40,0.7), rgba(5,15,10,0.65));
+  }
+
+  .city-icon {
+    font-size: 3.5rem;
+    width: 80px;
+    height: 80px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--brand1), var(--brand2));
+    margin-bottom: 5px;
+    animation: float 3s ease-in-out infinite;
+    position: relative;
+  }
+
+  .city-card.locked .city-icon {
+    background: linear-gradient(135deg, var(--locked), #374151);
+    animation: none;
+  }
+
+  .city-card.completed .city-icon {
+    background: linear-gradient(135deg, var(--ok), #059669);
+  }
+
+  .city-card:nth-child(1) .city-icon { animation-delay: -0.2s; }
+  .city-card:nth-child(2) .city-icon { animation-delay: -0.4s; }
+  .city-card:nth-child(3) .city-icon { animation-delay: -0.6s; }
+  .city-card:nth-child(4) .city-icon { animation-delay: -0.8s; }
+  .city-card:nth-child(5) .city-icon { animation-delay: -1.0s; }
+
+  .lock-overlay {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 1.5rem;
+    color: var(--locked);
+  }
+
+  .completion-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 1.5rem;
+    color: var(--ok);
+  }
+
+  .city-name {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: 0.5px;
+  }
+
+  .city-card.locked .city-name {
+    color: var(--locked);
+  }
+
+  .city-difficulty {
+    font-size: 0.9rem;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .city-card.locked .city-difficulty {
+    color: var(--locked);
+  }
+
+  .menu-buttons {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  /* Button Styles */
+  button {
+    border: none;
+    cursor: pointer;
+    border-radius: 12px;
+    padding: 15px 25px;
+    font-weight: 700;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    color: #0a1020;
+  }
+
+  .btn-primary {
+    background: linear-gradient(90deg, var(--brand2), var(--brand1));
+    color: #0b1020;
+  }
+
+  .btn-secondary {
+    background: linear-gradient(90deg, #fbbf24, #f59e0b);
+    color: #0b1020;
+  }
+
+  .btn-start {
+    background: linear-gradient(90deg, #22d3ee, #3b82f6);
+    color: #0b1020;
+  }
+
+  .btn-retain {
+    background: linear-gradient(90deg, #34d399, #10b981);
+  }
+
+  .btn-remove {
+    background: linear-gradient(90deg, #fb7185, #ef4444);
+  }
+
+  .btn-next {
+    background: linear-gradient(90deg, #fde68a, #fbbf24);
+  }
+
+  button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+  }
+
+  button:active {
+    transform: translateY(1px);
+  }
+
+  .disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    filter: grayscale(0.2);
+  }
+
+  /* Game Page Styles */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    backdrop-filter: blur(6px);
+    background: linear-gradient(90deg, rgba(34,211,238,0.08), rgba(59,130,246,0.08));
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+
+  .brand .title {
+    font-size: 1.1rem;
+  }
+
+  .tag {
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .city-checkpoints {
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+  }
+
+  .city-checkpoints .active {
+    font-weight: bold;
+    color: var(--active);
+    background: linear-gradient(90deg, var(--brand1), var(--brand2));
+    border-radius: 6px;
+    padding: 2px 8px;
+    box-shadow: 0 2px 8px rgba(59,130,246,0.12);
+    letter-spacing: 0.5px;
+  }
+
+  .city-checkpoints .completed {
+    color: var(--ok);
+    background: linear-gradient(90deg, var(--ok), #059669);
+    border-radius: 6px;
+    padding: 2px 8px;
+  }
+
+  .city-checkpoints .arrow {
+    color: var(--muted);
+    font-weight: normal;
+    padding: 0 2px;
+  }
+
+  .container {
+    max-width: 980px;
+    margin: 20px auto;
+    padding: 0 16px;
+  }
+
+  .game {
+    background: linear-gradient(180deg, rgba(16,24,40,0.7), rgba(9,13,24,0.65));
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+  }
+
+  .hud {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 10px;
+    align-items: center;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: linear-gradient(90deg, rgba(34,211,238,0.06), rgba(59,130,246,0.06));
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .city {
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #c7d2fe;
+  }
+
+  .stats {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    justify-content: flex-end;
+    font-size: 0.95rem;
+  }
+
+  .stat {
+    color: var(--muted);
+  }
+
+  .stat b {
+    color: var(--text);
+  }
+
+  .lives {
+    letter-spacing: 1px;
+  }
+
+  .timer {
+    color: #fde68a;
+  }
+
+  .score {
+    color: #a7f3d0;
+  }
+
+  .stage {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 18px;
+    margin-top: 18px;
+  }
+
+  .panel {
+    background: linear-gradient(180deg, rgba(18,27,46,0.7), rgba(10,16,30,0.55));
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 16px;
+    padding: 16px;
+  }
+
+  .panel h3 {
+    margin: 0 0 10px;
+    font-size: 1rem;
+    color: #cbd5e1;
+    letter-spacing: 0.3px;
+  }
+
+  .hero-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .narrative {
+    font-size: 0.95rem;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+
+  .review-box {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .review-text {
+    min-height: 84px;
+    font-size: 1.15rem;
+    line-height: 1.45;
+    padding: 14px;
+    border-radius: 12px;
+    border: 1px dashed rgba(255,255,255,0.12);
+    background: linear-gradient(180deg, rgba(22,31,52,0.6), rgba(10,16,30,0.45));
+  }
+
+  .btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .feedback {
+    min-height: 56px;
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 1rem;
+    background: linear-gradient(180deg, rgba(18,27,46,0.55), rgba(10,16,30,0.45));
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .good {
+    color: #86efac;
+  }
+
+  .bad {
+    color: #fca5a5;
+  }
+
+  .zone-end {
+    margin-top: 12px;
+    font-size: 0.95rem;
+    color: #c7d2fe;
+  }
+
+  .transition {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9;
+    background: radial-gradient(1000px 600px at 50% -10%, rgba(34,211,238,0.14), transparent 60%),
+                linear-gradient(180deg, rgba(3,7,18,0.95), rgba(2,6,23,0.98));
+    animation: fadeIn 0.35s ease both;
+    text-align: center;
+    padding: 20px;
+  }
+
+  .transition .card {
+    max-width: 760px;
+    width: 100%;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 18px;
+    padding: 18px;
+    background: linear-gradient(180deg, rgba(16,24,40,0.6), rgba(10,16,30,0.5));
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+
+  .transition h2 {
+    margin: 8px 0 6px;
+    font-size: 1.4rem;
+  }
+
+  .transition p {
+    margin: 0;
+    color: var(--muted);
+  }
+
+  .city-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: linear-gradient(90deg, rgba(34,211,238,0.12), rgba(59,130,246,0.12));
+    color: #c7d2fe;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    margin-top: 6px;
+  }
+
+  .travel-hint {
+    color: #a7f3d0;
+    margin: 8px 0 14px;
+    font-size: 0.95rem;
+  }
+
+  .footer-note {
+    color: #94a3b8;
+    font-size: 0.85rem;
+    margin-top: 6px;
+  }
+
+  /* Animations */
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+
+  .hero-avatar {
+    width: 220px;
+    height: 220px;
+    background: linear-gradient(135deg, var(--brand1), var(--brand2));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4rem;
+    animation: pulse 2s ease-in-out infinite;
+    margin: 10px 0;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+
+  .travel-animation {
+    width: 100px;
+    height: 100px;
+    background: linear-gradient(135deg, var(--accent), #fbbf24);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    animation: spin 2s linear infinite;
+    margin: 20px auto;
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .unlock-hint {
+    position: absolute;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.8rem;
+    color: var(--locked);
+    text-align: center;
+  }
+
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .game-title {
+      font-size: 2.2rem;
+    }
+
+    .cities-grid {
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+    }
+
+    .city-card {
+      padding: 20px 10px;
+      min-height: 150px;
+    }
+
+    .city-icon {
+      font-size: 2.8rem;
+      width: 70px;
+      height: 70px;
+    }
+
+    .stage {
+      grid-template-columns: 1fr;
+      gap: 15px;
+    }
+
+    .menu-buttons {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    button {
+      padding: 12px 20px;
+      min-width: 200px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- Main Menu Page -->
+<div id="mainMenu" class="page active">
+  <div class="main-menu">
+    <h1 class="game-title">🛡️ Guardián de Reseñas</h1>
+    <p class="game-subtitle">Moderación de contenido divertida, valiente y justa</p>
+
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+
+    <div class="cities-grid" id="citiesGrid">
+      <!-- Cities will be populated by JavaScript -->
+    </div>
+
+    <div class="menu-buttons">
+      <button class="btn-primary" onclick="continueProgress()">🚀 Siguiente Ciudad</button>
+    </div>
+  </div>
+</div>
+
+<!-- Game Page -->
+<div id="gamePage" class="page">
+  <header>
+    <div class="brand">
+      <div class="shield-icon" style="width: 38px; height: 38px; background: linear-gradient(135deg, var(--brand1), var(--brand2)); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">🛡️</div>
+      <div>
+        <div class="title">🛡️ Guardián de Reseñas</div>
+        <div class="tag">Divertido, valiente y justo.</div>
+      </div>
+    </div>
+    <div class="city-checkpoints" id="cityCheckpoints"></div>
+  </header>
+
+  <div class="container">
+    <div class="game">
+      <div class="hud">
+        <div class="city" id="cityName">Presiona Iniciar</div>
+        <div class="stat"><b id="progress">0/0</b> reseñas</div>
+        <div class="stats">
+          <div class="stat lives">Vidas: <b id="lives">—</b></div>
+          <div class="stat timer">Tiempo: <b id="timer">—</b></div>
+          <div class="stat score">Puntos: <b id="score">0</b></div>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="panel hero-box">
+          <h3>Tu avatar</h3>
+          <div class="hero-avatar" id="heroAvatar">🛡️</div>
+          <div class="narrative" id="narrative">Conviértete en el Guardián Internacional de Reseñas. Presiona Iniciar para el despliegue.</div>
+        </div>
+
+        <div class="panel review-box">
+          <h3>Reseña actual</h3>
+          <div class="review-text" id="reviewText">Listo cuando tú lo estés. Tu mente es tu espada; las reglas son tu escudo.</div>
+          <div class="btns">
+            <button class="btn-retain disabled" id="retainBtn" disabled>✅ Conservar</button>
+            <button class="btn-remove disabled" id="removeBtn" disabled>❌ Eliminar</button>
+            <button class="btn-start" id="startBtn">🚀 Iniciar Juego</button>
+          </div>
+          <div class="feedback" id="feedback"></div>
+          <div class="zone-end" id="zoneEnd"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Transition Overlay -->
+<div class="transition" id="transition">
+  <div class="card">
+    <div class="travel-animation" id="travelAnim">✈️</div>
+    <h2 id="transitionTitle">Bienvenido a Madrid</h2>
+    <div class="city-badge" id="badge">Zona • Madrid</div>
+    <p class="travel-hint" id="travelHint">Violaciones obvias, slang clásico. Calienta tus instintos de Guardián.</p>
+    <button class="btn-next" id="continueBtn">Continuar</button>
+    <div class="footer-note">Consejo: El humor ayuda, pero las reglas mandan.</div>
+  </div>
+</div>
+
+<script>
+  // Page Management
+  let currentPage = 'mainMenu';
+
+  function showPage(pageId) {
+    document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+    document.getElementById(pageId).classList.add('active');
+    currentPage = pageId;
+  }
+
+  function showMainMenu() {
+    showPage('mainMenu');
+    updateMainMenu();
+  }
+
+  function showGame() {
+    showPage('gamePage');
+  }
+
+  // Zone configuration with Spanish data from the dataset
+  const zones = [
+    {
+      city: "Madrid",
+      timer: 120,
+      travelAnim: "🏛️",
+      intro: "Violaciones obvias (Fácil). Calienta tus instintos de Guardián.",
+      reviews: [
+        { text: "Este bar es un asco, el camarero me ofreció perico en el baño.", correct: "remove", joke: "\"Perico\" es slang para cocaína; promoción de drogas ilegales." },
+        { text: "La playa estaba llena de prostitutas ofreciendo servicio completo a plena luz del día.", correct: "remove", joke: "Mención directa de prostitución; contenido sexual explícito." },
+        { text: "El hotel es genial, la piscina siempre limpia y el personal muy amable.", correct: "retain", joke: "Sin violación." },
+        { text: "Este restaurante merece que lo quemen, pésimo servicio.", correct: "remove", joke: "Incitación a violencia contra propiedad." },
+        { text: "El guía turístico fue un crack, nos llevó a sitios secretos increíbles.", correct: "retain", joke: "Sin violación." },
+        { text: "El camarero me dijo que podía conseguir mota si quería.", correct: "remove", joke: "\"Mota\" es slang para marihuana; promoción de drogas ilegales." },
+        { text: "El hostal estaba limpio y barato, volvería sin dudarlo.", correct: "retain", joke: "Sin violación." },
+        { text: "La comida estaba tan mala que quería golpear al chef.", correct: "remove", joke: "Expresión de violencia hacia una persona." },
+        { text: "El museo es pequeño pero muy interesante, vale la pena.", correct: "retain", joke: "Sin violación." },
+        { text: "El recepcionista me ofreció pastis para animar la noche.", correct: "remove", joke: "\"Pastis\" es slang para pastillas de éxtasis; drogas ilegales." }
+      ]
+    },
+    {
+      city: "Barcelona",
+      timer: 110,
+      travelAnim: "🏖️",
+      intro: "Claras violaciones con slang más sutil. Mantén los sentidos agudos.",
+      reviews: [
+        { text: "El bar tiene buena música, pero en la barra vendían blanca sin disimulo.", correct: "remove", joke: "\"Blanca\" es slang para cocaína; promoción de drogas ilegales." },
+        { text: "El hotel estaba lleno de chicas de compañía en el lobby.", correct: "remove", joke: "Referencia a prostitución." },
+        { text: "El restaurante sirve porciones grandes y el precio es justo.", correct: "retain", joke: "Sin violación." },
+        { text: "El camarero me ofreció hierba para relajarme.", correct: "remove", joke: "\"Hierba\" es marihuana; drogas ilegales." },
+        { text: "El guía fue muy atento y conocía bien la historia local.", correct: "retain", joke: "Sin violación." },
+        { text: "El club nocturno es perfecto para reventarse toda la noche.", correct: "remove", joke: "\"Reventarse\" en este contexto implica consumo excesivo de drogas." },
+        { text: "El hostal tiene camas cómodas y buen ambiente.", correct: "retain", joke: "Sin violación." },
+        { text: "El bar estaba lleno de trapos y miradas feas.", correct: "retain", joke: "Slang ambiguo, pero no viola directamente las normas." },
+        { text: "El camarero me ofreció merca en el baño.", correct: "remove", joke: "\"Merca\" es slang para cocaína; drogas ilegales." },
+        { text: "El parque es tranquilo y seguro para familias.", correct: "retain", joke: "Sin violación." }
+      ]
+    },
+    {
+      city: "Sevilla",
+      timer: 100,
+      travelAnim: "💃",
+      intro: "Casos mixtos con slang más tricky. Entrando en las entrañas del Guardián.",
+      reviews: [
+        { text: "El hotel es un antro pero barato.", correct: "retain", joke: "\"Antro\" aquí significa lugar modesto, no necesariamente ilegal." },
+        { text: "El bar es ideal para hacer un negocio rápido con chicas.", correct: "remove", joke: "Eufemismo para prostitución." },
+        { text: "El restaurante es caro pero la comida es excelente.", correct: "retain", joke: "Sin violación." },
+        { text: "El camarero me dijo que podía volar alto si quería.", correct: "remove", joke: "Eufemismo para drogarse; promoción de drogas." },
+        { text: "El guía nos llevó a un sitio caliente de la ciudad.", correct: "retain", joke: "\"Caliente\" aquí es zona concurrida, no necesariamente ilegal." },
+        { text: "El hotel estaba lleno de clientes especiales que subían con chicas.", correct: "remove", joke: "Implica prostitución." },
+        { text: "El bar tiene tragos que te dejan en la luna.", correct: "remove", joke: "Eufemismo para bebidas adulteradas/drogas." },
+        { text: "El museo es aburrido y caro.", correct: "retain", joke: "Sin violación." },
+        { text: "El camarero me ofreció polvo para animar la noche.", correct: "remove", joke: "\"Polvo\" en este contexto es cocaína; drogas ilegales." },
+        { text: "El parque tiene buena iluminación y seguridad.", correct: "retain", joke: "Sin violación." }
+      ]
+    },
+    {
+      city: "Valencia",
+      timer: 95,
+      travelAnim: "🥘",
+      intro: "Significados ocultos o borderline. Violaciones escondidas a plena vista.",
+      reviews: [
+        { text: "El bar es perfecto para cerrar tratos con gente de la calle.", correct: "remove", joke: "Eufemismo para actividades ilegales." },
+        { text: "El hotel tiene servicios extra si pagas en efectivo.", correct: "remove", joke: "Implica prostitución o actividades ilegales." },
+        { text: "El restaurante es pura crema en atención.", correct: "retain", joke: "Slang positivo, no viola normas." },
+        { text: "El camarero me dijo que podía conseguir algo para la fiesta.", correct: "remove", joke: "Eufemismo para drogas." },
+        { text: "El guía fue amable y conocía atajos.", correct: "retain", joke: "Sin violación." },
+        { text: "El club es zona roja pero divertido.", correct: "remove", joke: "\"Zona roja\" implica prostitución." },
+        { text: "El hostal es barato y bien ubicado.", correct: "retain", joke: "Sin violación." },
+        { text: "El bar tiene cosas que te hacen olvidar todo.", correct: "remove", joke: "Eufemismo para drogas." },
+        { text: "El museo es pequeño pero interesante.", correct: "retain", joke: "Sin violación." },
+        { text: "El camarero me ofreció dulces para animarme.", correct: "remove", joke: "\"Dulces\" en este contexto es slang para drogas sintéticas." }
+      ]
+    },
+    {
+      city: "Bilbao",
+      timer: 90,
+      travelAnim: "🏭",
+      intro: "Altamente engañosos. Este es el Nivel Maestro.",
+      reviews: [
+        { text: "El hotel es ideal para viajeros que buscan compañía nocturna discreta.", correct: "remove", joke: "Eufemismo para prostitución." },
+        { text: "El bar es perfecto para hacer negocios rápidos sin preguntas.", correct: "remove", joke: "Implica actividades ilegales." },
+        { text: "El restaurante es un viaje de sabores.", correct: "retain", joke: "Metáfora culinaria, no drogas." },
+        { text: "El camarero me dijo que podía subirme al cielo por poco dinero.", correct: "remove", joke: "Eufemismo para drogarse." },
+        { text: "El guía conoce lugares donde todo es posible.", correct: "remove", joke: "Implica actividades ilegales o sexuales." },
+        { text: "El hostal es tranquilo y seguro.", correct: "retain", joke: "Sin violación." },
+        { text: "El bar tiene tragos mágicos que te cambian la noche.", correct: "remove", joke: "Eufemismo para bebidas adulteradas/drogas." },
+        { text: "El museo es aburrido y caro.", correct: "retain", joke: "Sin violación." },
+        { text: "El parque es ideal para familias y niños.", correct: "retain", joke: "Sin violación." },
+        { text: "El camarero me ofreció polvito para animarme.", correct: "remove", joke: "\"Polvito\" es diminutivo de \"polvo\" (cocaína); drogas ilegales." }
+      ]
+    }
+  ];
+
+  let zoneIdx = 0;
+  let reviewIdx = 0;
+  let lives = 4;
+  let score = 0;
+  let timerId = null;
+  let remaining = 0;
+  let zoneCorrect = 0;
+  const passThreshold = 0.7;
+
+  // Game state management
+  let gameState = {
+    completedCities: JSON.parse(localStorage.getItem('completedCities_es') || '[]'),
+  };
+
+  const cityName = document.getElementById('cityName');
+  const progressDom = document.getElementById('progress');
+  const livesDom = document.getElementById('lives');
+  const timerDom = document.getElementById('timer');
+  const scoreDom = document.getElementById('score');
+  const heroAvatar = document.getElementById('heroAvatar');
+  const narrative = document.getElementById('narrative');
+  const reviewText = document.getElementById('reviewText');
+  const retainBtn = document.getElementById('retainBtn');
+  const removeBtn = document.getElementById('removeBtn');
+  const startBtn = document.getElementById('startBtn');
+  const feedback = document.getElementById('feedback');
+  const zoneEnd = document.getElementById('zoneEnd');
+  const transition = document.getElementById('transition');
+  const transitionAnim = document.getElementById('travelAnim');
+  const transitionTitle = document.getElementById('transitionTitle');
+  const badge = document.getElementById('badge');
+  const travelHint = document.getElementById('travelHint');
+  const continueBtn = document.getElementById('continueBtn');
+  const cityCheckpoints = document.getElementById('cityCheckpoints');
+  const progressFill = document.getElementById('progressFill');
+  const citiesGrid = document.getElementById('citiesGrid');
+
+  function saveProgress() {
+    localStorage.setItem('completedCities_es', JSON.stringify(gameState.completedCities));
+  }
+
+  function isCityUnlocked(cityIndex) {
+    if (cityIndex === 0) return true; // Madrid is always unlocked
+    return gameState.completedCities.includes(cityIndex - 1);
+  }
+
+  function markCityCompleted(cityIndex) {
+    if (!gameState.completedCities.includes(cityIndex)) {
+      gameState.completedCities.push(cityIndex);
+      saveProgress();
+    }
+  }
+
+  function getNextUnlockedCity() {
+    for (let i = 0; i < zones.length; i++) {
+      if (isCityUnlocked(i) && !gameState.completedCities.includes(i)) {
+        return i;
+      }
+    }
+    return gameState.completedCities.length > 0 ? gameState.completedCities[gameState.completedCities.length - 1] : 0;
+  }
+
+  function updateMainMenu() {
+    // Update progress bar
+    const completionPercent = (gameState.completedCities.length / zones.length) * 100;
+    progressFill.style.width = completionPercent + '%';
+
+    // Generate city cards
+    citiesGrid.innerHTML = zones.map((zone, index) => {
+      const isUnlocked = isCityUnlocked(index);
+      const isCompleted = gameState.completedCities.includes(index);
+
+      let cardClass = 'city-card';
+      let badge = '';
+      let unlockText = '';
+
+      if (isCompleted) {
+        cardClass += ' completed';
+        badge = '<div class="completion-badge">✅</div>';
+      } else if (!isUnlocked) {
+        cardClass += ' locked';
+        badge = '<div class="lock-overlay">🔒</div>';
+        unlockText = '<div class="unlock-hint">Completa la ciudad anterior para desbloquear</div>';
+      } else {
+        cardClass += ' unlocked';
+      }
+
+      const clickHandler = isUnlocked ? `onclick="selectCity(${index})"` : '';
+
+      return `
+        <div class="${cardClass}" ${clickHandler}>
+          ${badge}
+          <div class="city-icon">${zone.travelAnim}</div>
+          <div class="city-name">${zone.city}</div>
+          <div class="city-difficulty">${zone.timer}s • Zona ${index + 1}</div>
+          ${unlockText}
+        </div>
+      `;
+    }).join('');
+  }
+
+  function continueProgress() {
+    const nextCity = getNextUnlockedCity();
+    selectCity(nextCity);
+  }
+
+  function selectCity(cityIndex) {
+    if (!isCityUnlocked(cityIndex)) return;
+
+    zoneIdx = cityIndex;
+    showGame();
+    showTransition(
+      `Aterriza en ${zones[cityIndex].city}`,
+      zones[cityIndex].city,
+      zones[cityIndex].travelAnim,
+      zones[cityIndex].intro,
+      `Entra en ${zones[cityIndex].city}`
+    );
+  }
+
+  function renderCheckpoints(currentIdx) {
+    cityCheckpoints.innerHTML = zones.map((z, idx) =>
+      `<span class="${idx===currentIdx?'active':(gameState.completedCities.includes(idx)?'completed':'')}">${z.city}</span>${idx<zones.length-1?'<span class="arrow">→</span>':''}`
+    ).join('');
+  }
+
+  function enablePlay(enable){
+    [retainBtn, removeBtn].forEach(b=>{
+      b.disabled = !enable;
+      b.classList.toggle('disabled', !enable);
+    });
+  }
+
+  function loadReview(){
+    const z = zones[zoneIdx];
+    const total = z.reviews.length;
+    if(reviewIdx >= total){
+      endZone();
+      return;
+    }
+    const item = z.reviews[reviewIdx];
+    reviewText.textContent = item.text;
+    progressDom.textContent = `${reviewIdx+1}/${total}`;
+    feedback.innerHTML = '';
+    zoneEnd.textContent = '';
+    enablePlay(true);
+  }
+
+  function playBurst(good=true){
+    // Simple color animation
+    if (good) {
+      heroAvatar.style.background = 'linear-gradient(135deg, var(--ok), #059669)';
+    } else {
+      heroAvatar.style.background = 'linear-gradient(135deg, var(--bad), #dc2626)';
+    }
+    setTimeout(() => {
+      heroAvatar.style.background = 'linear-gradient(135deg, var(--brand1), var(--brand2))';
+    }, 800);
+  }
+
+  function checkAnswer(choice){
+    enablePlay(false);
+    const z = zones[zoneIdx];
+    const cur = z.reviews[reviewIdx];
+    const correct = cur.correct === choice;
+
+    if(correct){
+      score++;
+      zoneCorrect++;
+      feedback.innerHTML = `✅ <span class="good">Correcto.</span> ${cur.joke}`;
+      playBurst(true);
+    }else{
+      lives--;
+      feedback.innerHTML = `❌ <span class="bad">Incorrecto.</span> ${cur.joke}`;
+      playBurst(false);
+    }
+
+    scoreDom.textContent = score;
+    livesDom.textContent = "❤".repeat(Math.max(0,lives));
+    reviewIdx++;
+
+    if(lives <= 0){
+      setTimeout(()=> endZone(true), 900);
+      return;
+    }
+    setTimeout(loadReview, 900);
+  }
+
+  function endZone(outOfLives=false){
+    clearInterval(timerId);
+    enablePlay(false);
+    const z = zones[zoneIdx];
+    const total = z.reviews.length;
+    const needed = Math.ceil(passThreshold * total);
+    const passed = zoneCorrect >= needed && !outOfLives;
+
+    if(passed){
+      markCityCompleted(zoneIdx);
+      zoneEnd.textContent = `🏅 Zona completada: ${zoneCorrect}/${total} correctas (necesarias ${needed}). ¡Sube al próximo vuelo!`;
+      const next = zones[zoneIdx+1];
+      if(next){
+        setTimeout(()=>{
+          showTransition(
+            `Despegue de ${z.city} → Llegada a ${next.city}`,
+            next.city,
+            next.travelAnim,
+            `Nueva ciudad, nuevo slang. ${next.intro}`,
+            "Entrar en la siguiente ciudad"
+          );
+        }, 700);
+      }else{
+        setTimeout(()=>{
+          showTransition(
+            `Corona de Maestro Ganada`,
+            "Guardián Global",
+            "👑",
+            "Has completado todas las ciudades con valentía, ingenio y juicio sólido como una roca.",
+            "Celebrar y Reiniciar"
+          );
+        }, 700);
+      }
+    }else{
+      zoneEnd.textContent = `💥 Zona fallida: ${zoneCorrect}/${total} correctas (necesarias ${needed}). ` +
+        (outOfLives ? "Te quedaste sin vidas." : "Tiempo/precisión insuficientes.") + " Inténtalo de nuevo.";
+      setTimeout(()=>{
+        showTransition(
+          `Reintentar ${z.city}`,
+          z.city,
+          "💀",
+          "Respira profundo. Humor recargado. Reglas listas. Ve de nuevo.",
+          "Reintentar zona"
+        );
+      }, 700);
+    }
+  }
+
+  function startZone(idx){
+    zoneIdx = idx;
+    reviewIdx = 0;
+    lives = 4;
+    zoneCorrect = 0;
+
+    renderCheckpoints(zoneIdx);
+
+    const z = zones[zoneIdx];
+    cityName.textContent = z.city;
+    narrative.textContent = z.intro;
+    livesDom.textContent = "❤❤❤❤";
+    scoreDom.textContent = score;
+    progressDom.textContent = `0/${z.reviews.length}`;
+    reviewText.textContent = "Cargando reseñas...";
+    zoneEnd.textContent = "";
+    enablePlay(true);
+
+    // Update hero avatar emoji
+    heroAvatar.textContent = z.travelAnim;
+
+    remaining = z.timer;
+    timerDom.textContent = remaining + "s";
+    clearInterval(timerId);
+    timerId = setInterval(()=>{
+      remaining--;
+      timerDom.textContent = remaining + "s";
+      if(remaining <= 0){
+        clearInterval(timerId);
+        enablePlay(false);
+        zoneEnd.textContent = "⏰ ¡Tiempo agotado! Elementos sin responder marcados automáticamente como incorrectos.";
+        setTimeout(()=> endZone(), 900);
+      }
+    }, 1000);
+
+    loadReview();
+  }
+
+  function showTransition(title, cityLabel, animEmoji, hint, buttonText="Continuar"){
+    transitionTitle.textContent = title;
+    badge.textContent = `Zona • ${cityLabel}`;
+    travelHint.textContent = hint;
+    transitionAnim.textContent = animEmoji;
+    continueBtn.textContent = buttonText;
+    transition.style.display = 'flex';
+  }
+
+  function hideTransition(){
+    transition.style.display = 'none';
+  }
+
+  // Start/restart game
+  startBtn.addEventListener('click', ()=>{
+    score = 0;
+    scoreDom.textContent = score;
+    showTransition(
+      "Aterriza en Madrid",
+      "Madrid",
+      zones[0].travelAnim,
+      zones[0].intro,
+      "Entra en Madrid"
+    );
+  });
+
+  // Continue button logic
+  continueBtn.addEventListener('click', ()=>{
+    hideTransition();
+    const title = transitionTitle.textContent || "";
+    if(title.startsWith("Aterriza en Madrid") || title.startsWith("Bienvenido a Madrid") || title.includes("Entra en Madrid")){
+      startZone(0);
+      return;
+    }
+    if(title.startsWith("Reintentar")){
+      startZone(zoneIdx);
+      return;
+    }
+    if(title.startsWith("Despegue de")){
+      startZone(zoneIdx+1);
+      return;
+    }
+    if(title.startsWith("Corona de Maestro")){
+      zoneIdx = 0; score = 0;
+      scoreDom.textContent = score;
+      showMainMenu();
+      return;
+    }
+    startZone(zoneIdx);
+  });
+
+  retainBtn.addEventListener('click', ()=> checkAnswer("retain"));
+  removeBtn.addEventListener('click', ()=> checkAnswer("remove"));
+
+  window.addEventListener('keydown', (e)=>{
+    if(currentPage !== 'gamePage' || retainBtn.disabled) return;
+    if(e.key.toLowerCase()==='a') checkAnswer("retain");
+    if(e.key.toLowerCase()==='l') checkAnswer("remove");
+  });
+
+  // Initialize
+  updateMainMenu();
+  renderCheckpoints(zoneIdx);
+</script>
+</body>
+</html>
